@@ -37,36 +37,34 @@ export async function GET(req: Request) {
     const sessions = sessionsRes.rows[0]?.c ?? '0';
     const pageviews = pageviewsRes.rows[0]?.c ?? '0';
 
-    const byDay = await query<{ day: string; c: string; sessions: string }>(`
-      SELECT to_char(ts, 'YYYY-MM-DD') as day, COUNT(*) as c, COUNT(DISTINCT session) as sessions
-FROM analytics_events WHERE ts >= $1
-GROUP BY day ORDER BY day ASC
-      FROM analytics_events WHERE ts >= $1
-      GROUP BY day ORDER BY day ASC`, [cutoff]);
+    const byDay = await query<{ day: string; c: string; sessions: string }>(
+      "SELECT to_char(ts, 'YYYY-MM-DD') as day, COUNT(*) as c, COUNT(DISTINCT session) as sessions FROM analytics_events WHERE ts >= $1 GROUP BY day ORDER BY day ASC", [cutoff]
+    );
 
-    const byEvent = await query<{ event: string; c: string }>(`
-      SELECT event, COUNT(*) as c FROM analytics_events
-      WHERE ts >= $1 GROUP BY event ORDER BY c DESC LIMIT 12`, [cutoff]);
+    const byEvent = await query<{ event: string; c: string }>(
+      "SELECT event, COUNT(*) as c FROM analytics_events WHERE ts >= $1 GROUP BY event ORDER BY c DESC LIMIT 12", [cutoff]
+    );
 
-    const byDevice = await query<{ device: string; c: string }>(`
-      SELECT device, COUNT(*) as c FROM analytics_events
-      WHERE ts >= $1 AND device IS NOT NULL GROUP BY device ORDER BY c DESC`, [cutoff]);
+    const byDevice = await query<{ device: string; c: string }>(
+      "SELECT device, COUNT(*) as c FROM analytics_events WHERE ts >= $1 AND device IS NOT NULL GROUP BY device ORDER BY c DESC", [cutoff]
+    );
 
-    const byLang = await query<{ lang: string; c: string }>(`
-      SELECT lang, COUNT(*) as c FROM analytics_events
-      WHERE ts >= $1 AND lang IS NOT NULL GROUP BY lang ORDER BY c DESC`, [cutoff]);
+    const byLang = await query<{ lang: string; c: string }>(
+      "SELECT lang, COUNT(*) as c FROM analytics_events WHERE ts >= $1 AND lang IS NOT NULL GROUP BY lang ORDER BY c DESC", [cutoff]
+    );
 
-    const topPaths = await query<{ path: string; c: string }>(`
-      SELECT path, COUNT(*) as c FROM analytics_events
-      WHERE ts >= $1 AND path IS NOT NULL
-      GROUP BY path ORDER BY c DESC LIMIT 10`, [cutoff]);
+    const topPaths = await query<{ path: string; c: string }>(
+      "SELECT path, COUNT(*) as c FROM analytics_events WHERE ts >= $1 AND path IS NOT NULL GROUP BY path ORDER BY c DESC LIMIT 10", [cutoff]
+    );
 
-    const dbSizeResult = await query<{ bytes: string }>(`
-      SELECT pg_database_size(current_database()) as bytes`);
+    const dbSizeResult = await query<{ bytes: string }>(
+      "SELECT pg_database_size(current_database()) as bytes"
+    );
     const dbSizeBytes = dbSizeResult.rows[0]?.bytes ? parseInt(dbSizeResult.rows[0].bytes, 10) : null;
 
     const relayCountRes = await query<{ c: string }>(
-      'SELECT COUNT(*) as c FROM relay_snapshots');
+      'SELECT COUNT(*) as c FROM relay_snapshots'
+    );
     const relayCount = relayCountRes.rows[0]?.c ?? '0';
 
     return NextResponse.json({
