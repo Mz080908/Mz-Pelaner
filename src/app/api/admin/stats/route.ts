@@ -74,7 +74,6 @@ export async function GET(req: Request) {
  byDay: byDay.rows, byEvent: byEvent.rows, byDevice: byDevice.rows, byLang: byLang.rows, topPaths: topPaths.rows,
   dbSizeBytes, relayCount: parseInt(relayCount, 10),
 });
-    });
   } catch (e) {
     console.error('[admin/stats] query failed:', e);
     return NextResponse.json({ ok: false, error: 'query failed' }, { status: 500 });
