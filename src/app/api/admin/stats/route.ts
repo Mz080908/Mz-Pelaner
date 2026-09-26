@@ -68,11 +68,12 @@ export async function GET(req: Request) {
     const relayCount = relayCountRes.rows[0]?.c ?? '0';
 
     return NextResponse.json({
-      ok: true,
-      range, days, cutoff,
-      total: parseInt(total, 10), sessions: parseInt(sessions, 10), pageviews: parseInt(pageviews, 10),
-      byDay, byEvent, byDevice, byLang, topPaths,
-      dbSizeBytes, relayCount: parseInt(relayCount, 10),
+  ok: true,
+  range, days, cutoff,
+  total: parseInt(total, 10), sessions: parseInt(sessions, 10), pageviews: parseInt(pageviews, 10),
+  byDay: byDay.rows, byEvent: byEvent.rows, byDevice: byDevice.rows, byLang: byLang.rows, topPaths: topPaths.rows,
+  dbSizeBytes, relayCount: parseInt(relayCount, 10),
+});
     });
   } catch (e) {
     console.error('[admin/stats] query failed:', e);
