@@ -38,7 +38,9 @@ export async function GET(req: Request) {
     const pageviews = pageviewsRes.rows[0]?.c ?? '0';
 
     const byDay = await query<{ day: string; c: string; sessions: string }>(`
-      SELECT substr(ts,1,10) as day, COUNT(*) as c, COUNT(DISTINCT session) as sessions
+      SELECT to_char(ts, 'YYYY-MM-DD') as day, COUNT(*) as c, COUNT(DISTINCT session) as sessions
+FROM analytics_events WHERE ts >= $1
+GROUP BY day ORDER BY day ASC
       FROM analytics_events WHERE ts >= $1
       GROUP BY day ORDER BY day ASC`, [cutoff]);
 
