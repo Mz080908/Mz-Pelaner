@@ -173,19 +173,19 @@ export default function Page() {
       {/* ambient aurora — 1–5px, very slow, paused when tab hidden */}
       <div className="fixed inset-0 -z-10 pointer-events-none overflow-hidden" aria-hidden="true">
         <motion.div data-ambient
-          className="absolute rounded-full blur-[180px]"
+          className="absolute rounded-full blur-[180px] gpu-accelerated"
           style={{ width: 540, height: 540, background: 'var(--mz-aurora-1)', left: 'calc(10% + var(--parallax-x, 0px))', top: 'calc(-20% + var(--parallax-y, 0px))' }}
           animate={settings.reduceMotion ? undefined : { scale: [1, 1.02, 1], opacity: [0.4, 0.55, 0.4] }}
           transition={{ duration: 16, ease: 'linear', repeat: Infinity }}
         />
         <motion.div data-ambient
-          className="absolute rounded-full blur-[180px]"
+          className="absolute rounded-full blur-[180px] gpu-accelerated"
           style={{ width: 480, height: 480, background: 'var(--mz-aurora-2)', right: 'calc(12% + var(--parallax-x, 0px))', bottom: 'calc(-15% + var(--parallax-y, 0px))' }}
           animate={settings.reduceMotion ? undefined : { scale: [1, 1.015, 1], opacity: [0.3, 0.45, 0.3] }}
           transition={{ duration: 20, ease: 'linear', repeat: Infinity, delay: 2 }}
         />
         <motion.div data-ambient
-          className="absolute rounded-full blur-[200px]"
+          className="absolute rounded-full blur-[200px] gpu-accelerated"
           style={{ width: 360, height: 360, background: 'var(--mz-aurora-3)', left: 'calc(55% + var(--parallax-x, 0px))', top: 'calc(65% + var(--parallax-y, 0px))' }}
           animate={settings.reduceMotion ? undefined : { scale: [1, 1.03, 1], opacity: [0.2, 0.32, 0.2] }}
           transition={{ duration: 24, ease: 'linear', repeat: Infinity, delay: 4 }}

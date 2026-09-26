@@ -846,7 +846,7 @@ export function FocusModeOverlay({ onExit }: { onExit: () => void }) {
       role="dialog" aria-modal="true" aria-label={tr(lang, 'focusMode')}
     >
       <motion.div
-        className="absolute w-[520px] h-[520px] rounded-full blur-[140px] pointer-events-none"
+        className="absolute w-[520px] h-[520px] rounded-full blur-[140px] pointer-events-none gpu-accelerated"
         style={{ background: 'var(--mz-aurora-1)' }}
         animate={{ scale: [1, 1.08, 1], opacity: [0.3, 0.55, 0.3] }}
         transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut' }}

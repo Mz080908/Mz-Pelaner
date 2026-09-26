@@ -2,6 +2,14 @@
 
 @custom-variant dark (&:where([data-theme="dark"] *));
 
+/* GPU layer promotion — use only on cheap transform/opacity animations (aurora).
+   Keeps appearance identical, moves compositing to its own layer on mobile GPUs. */
+.gpu-accelerated {
+  transform: translateZ(0);
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+}
+
 :root {
   --mz-accent: #7c8cff;
   --mz-bg: #f5f4ef;
@@ -197,4 +205,12 @@ body {
 /* ——————————————————— Mobile — disable heavy hover/parallax, keep springs ——————————————————— */
 @media (pointer: coarse) {
   .glass::before, .glass-strong::before { opacity: 0 !important; }
+
+  /* Same aurora/glow look, ~50% blur radius: a 180–200px blur over a 540px
+     element forces a huge GPU filter region every frame on phones. Halving
+     the radius keeps the soft bloom but roughly halves the blur cost. */
+  .blur-\[180px\] { filter: blur(90px) !important; -webkit-filter: blur(90px) !important; }
+  .blur-\[200px\] { filter: blur(100px) !important; -webkit-filter: blur(100px) !important; }
+  .blur-\[140px\] { filter: blur(70px) !important; -webkit-filter: blur(70px) !important; }
+  .blur-\[120px\] { filter: blur(60px) !important; -webkit-filter: blur(60px) !important; }
 }

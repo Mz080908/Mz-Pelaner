@@ -2068,7 +2068,7 @@ export function AnalyticsView() {
 
       {/* Hero grade */}
       <section className="glass rounded-[28px] p-5 sm:p-7 flex flex-col md:flex-row items-center gap-6 md:gap-10 overflow-hidden relative">
-        <div className="absolute -top-24 -end-24 w-72 h-72 rounded-full blur-[120px] pointer-events-none" style={{ background: 'var(--mz-aurora-1)' }} aria-hidden="true" />
+        <div className="absolute -top-24 -end-24 w-72 h-72 rounded-full blur-[120px] pointer-events-none gpu-accelerated" style={{ background: 'var(--mz-aurora-1)' }} aria-hidden="true" />
         <div className="relative" style={{ width: 160, height: 160 }}>
           <svg width={160} height={160} viewBox="0 0 160 160" className="-rotate-90" aria-hidden="true">
             <defs>
