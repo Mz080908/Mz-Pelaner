@@ -71,7 +71,7 @@ export async function GET(req: Request) {
   ok: true,
   range, days, cutoff,
   total: parseInt(total, 10), sessions: parseInt(sessions, 10), pageviews: parseInt(pageviews, 10),
-  byDay: byDay.rows, byEvent: byEvent.rows, byDevice: byDevice.rows, byLang: byLang.rows, topPaths: topPaths.rows,
+ byDay: byDay.rows, byEvent: byEvent.rows, byDevice: byDevice.rows, byLang: byLang.rows, topPaths: topPaths.rows,
   dbSizeBytes, relayCount: parseInt(relayCount, 10),
 });
     });
