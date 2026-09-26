@@ -326,7 +326,7 @@ function TaskGroups({ list, showDate, onDropTask }: { list: Task[]; showDate?: b
 /* ================================================================== */
 /* TODAY                                                               */
 /* ================================================================== */
-function WidgetShell({ id, title, children }: { id: string; title: string; children: React.ReactNode }) {
+function WidgetShell({ id, title, children, className }: { id: string; title: string; children: React.ReactNode; className?: string }) {
   const hidden = useAppStore((s) => s.hiddenWidgets);
   const setHidden = useAppStore((s) => s.setHiddenWidget);
   const lang = useAppStore((s) => s.settings.lang);
@@ -334,7 +334,7 @@ function WidgetShell({ id, title, children }: { id: string; title: string; child
   return (
     <motion.div layout
       variants={{ hidden: { opacity: 0, y: 8 }, show: { opacity: 1, y: 0, transition: springSoft } }}
-      className="glass rounded-3xl p-4 flex flex-col gap-2 min-h-[112px] relative group">
+      className={cn("glass rounded-3xl p-4 flex flex-col gap-2 min-h-[112px] relative group", className)}>
       <div className="flex items-center justify-between">
         <span className="text-[10.5px] uppercase tracking-[0.16em] opacity-50">{title}</span>
         <button type="button" onClick={() => setHidden(id, true)} aria-label={tr(lang, 'hideWidget')}
@@ -449,11 +449,11 @@ export function TodayView() {
         </div>
       </section>
 
-      {/* Widgets */}
+      {/* Widgets — single column on phones, 2-up from sm, 4-up from lg */}
       <motion.section aria-label={tr(lang, 'widgets')}
         variants={{ hidden: {}, show: { transition: { staggerChildren: staggerFast } } }}
         initial="hidden" animate="show"
-        className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 auto-rows-min">
         <WidgetShell id="streak" title={tr(lang, 'habitStreak')}>
           {bestHabit ? (
             <>
@@ -462,7 +462,7 @@ export function TodayView() {
                   className="text-[30px] font-semibold tracking-tight leading-none tabular-nums">{bestHabit.current}</motion.span>
                 <span className="text-[12.5px] opacity-60 pb-0.5">{tr(lang, 'dayStreak')}</span>
               </div>
-              <p className="text-[13px] opacity-70">{bestHabit.h.icon} {bestHabit.h.name}</p>
+              <p className="text-[13px] opacity-70 truncate">{bestHabit.h.icon} {bestHabit.h.name}</p>
             </>
           ) : <p className="text-[13px] opacity-50 mt-2">{tr(lang, 'habitsEmpty')}</p>}
         </WidgetShell>
@@ -484,15 +484,15 @@ export function TodayView() {
         </WidgetShell>
 
         <WidgetShell id="focus" title={tr(lang, 'focusTime')}>
-          <div className="flex items-center gap-3 flex-1">
-            <svg width="52" height="52" viewBox="0 0 52 52" className="-rotate-90" aria-hidden="true">
+          <div className="flex items-center gap-3 flex-1 min-w-0">
+            <svg width="52" height="52" viewBox="0 0 52 52" className="-rotate-90 shrink-0" aria-hidden="true">
               <circle cx="26" cy="26" r="21" fill="none" stroke="var(--mz-edge)" strokeWidth="6" />
               <motion.circle cx="26" cy="26" r="21" fill="none" stroke="var(--mz-accent)" strokeWidth="6" strokeLinecap="round"
                 strokeDasharray={`${2 * Math.PI * 21 * Math.min(1, dayStats.focusSec / 7200)} ${2 * Math.PI * 21}`}
                 transition={springSoft} />
             </svg>
-            <div>
-              <p className="text-[24px] font-semibold tracking-tight leading-none tabular-nums">
+            <div className="min-w-0">
+              <p className="text-[22px] sm:text-[24px] font-semibold tracking-tight leading-none tabular-nums whitespace-nowrap">
                 {Math.floor(dayStats.focusSec / 3600)}h {Math.floor((dayStats.focusSec % 3600) / 60)}m
               </p>
               <p className="text-[12px] opacity-55 mt-1">{doneCount} / {total} {tr(lang, 'ofTotal')}</p>
@@ -2239,20 +2239,10 @@ function EnergyWidget() {
   const energyLevels = [tr(lang, 'veryLow'), tr(lang, 'lowLabel'), tr(lang, 'normalLabel'), tr(lang, 'highLabel'), tr(lang, 'veryHigh')];
   const e = dayStats.energy; // 0..4 or null
   // Ring progress (for the dot ring: energy/4)
-  const ringR = 34, c = 2 * Math.PI * ringR;
+  const ringR = 28, c = 2 * Math.PI * ringR;
   const pctRing = e == null ? 0 : (e + 1) / 5;
   const dashRing = c * pctRing;
   // Sparkline last 7 days
-  const avgEnergy = (() => {
-    let s2 = 0, n2 = 0;
-    for (let i = 6; i >= 0; i--) {
-      const k = addDaysKey(now, -i);
-      const v = stats[k]?.energy;
-      if (v != null) { s2 += v; n2++; }
-    }
-    return n2 ? s2 / n2 : null;
-  })();
-
   const w = 152, h = 34, pad = 6;
   const histPts: [string, number][] = [];
   for (let i = 6; i >= 0; i--) {
@@ -2274,15 +2264,13 @@ function EnergyWidget() {
     }
   }
 
-  const ENERGY_LABEL = ['١-','٢-','٣','٤-','٥'];
-  void ENERGY_LABEL;
-  void avgEnergy;
-
   return (
-    <div className="flex flex-col gap-2.5">
-      <div className="flex items-center gap-3">
-        <div className="relative shrink-0" style={{ width: 76, height: 76 }}>
-          <svg width={76} height={76} viewBox="0 0 76 76" className="-rotate-90" aria-hidden="true">
+    <div className="flex flex-col gap-2.5 min-w-0">
+      <div className="flex items-center gap-3 flex-wrap">
+        {/* ring grows to 88px on narrow viewports so the centered label can never
+            overlap the stroke — SVG viewBox stays square, size is set via CSS */}
+        <div className="relative shrink-0 w-[76px] h-[76px] sm:w-[88px] sm:h-[88px]">
+          <svg viewBox="0 0 88 88" className="w-full h-full -rotate-90" aria-hidden="true">
             <defs>
               <linearGradient id="egrad" x1="0" y1="0" x2="1" y2="1">
                 <stop offset="0%" stopColor="var(--mz-accent)" />
@@ -2290,32 +2278,32 @@ function EnergyWidget() {
               </linearGradient>
               <filter id="eglow"><feGaussianBlur stdDeviation="3" /></filter>
             </defs>
-            <circle cx={38} cy={38} r={ringR} fill="none" stroke="var(--mz-edge)" strokeWidth={7} />
+            <circle cx={44} cy={44} r={ringR} fill="none" stroke="var(--mz-edge)" strokeWidth={7} />
             {e != null && (
-              <motion.circle cx={38} cy={38} r={ringR} fill="none" stroke="url(#egrad)" strokeWidth={7} strokeLinecap="round"
+              <motion.circle cx={44} cy={44} r={ringR} fill="none" stroke="url(#egrad)" strokeWidth={7} strokeLinecap="round"
                 style={{ filter: 'drop-shadow(0 3px 8px color-mix(in srgb, var(--mz-accent) 35%, transparent))' }}
                 initial={{ strokeDasharray: `0 ${c}` }}
                 animate={{ strokeDasharray: `${dashRing} ${Math.max(0.01, c - dashRing)}` }}
                 transition={{ type: 'spring', stiffness: 260, damping: 28 }}
               />
             )}
-            {/* 5 tick dots */}
+            {/* 5 tick dots — kept outside the ring but inside the viewBox */}
             {[0, 1, 2, 3, 4].map((i) => {
               const ang = (-90 + i * 52 - 52) * (Math.PI / 180);
               const r2 = ringR + 12;
-              return <circle key={i} cx={38 + r2 * Math.cos(ang)} cy={38 + r2 * Math.sin(ang)} r={i === e ? 3.5 : 2} fill={i <= (e ?? -1) ? 'var(--mz-accent)' : 'color-mix(in srgb, var(--mz-ink) 16%, transparent)'} opacity={i === e ? 1 : 0.9} />;
+              return <circle key={i} cx={44 + r2 * Math.cos(ang)} cy={44 + r2 * Math.sin(ang)} r={i === e ? 3.5 : 2} fill={i <= (e ?? -1) ? 'var(--mz-accent)' : 'color-mix(in srgb, var(--mz-ink) 16%, transparent)'} opacity={i === e ? 1 : 0.9} />;
             })}
             {/* traveling glow dot */}
             {e != null && (
               <motion.circle r={2.8} fill="rgba(255,255,255,0.95)" style={{ filter: 'url(#eglow)' }}
                 animate={{ rotate: 360 }} transition={{ duration: 9, repeat: Infinity, ease: 'linear' }}
-                transform={`translate(38 38)`}
+                transform={`translate(44 44)`}
               />
             )}
           </svg>
-          <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-            <span className="text-[11px] uppercase tracking-[0.14em] opacity-45">{tr(lang, 'energy')}</span>
-            <span className="text-[13px] font-semibold leading-none mt-0.5">{e == null ? '—' : energyLevels[e]}</span>
+          <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none px-1">
+            <span className="text-[9.5px] sm:text-[11px] uppercase tracking-[0.12em] opacity-45 leading-none whitespace-nowrap">{tr(lang, 'energy')}</span>
+            <span className="text-[11.5px] sm:text-[13px] font-semibold leading-none mt-1 max-w-full truncate">{e == null ? '—' : energyLevels[e]}</span>
           </div>
         </div>
         <div className="flex-1 grid grid-cols-5 gap-1">
