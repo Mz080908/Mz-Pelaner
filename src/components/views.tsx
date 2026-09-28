@@ -12,14 +12,14 @@ import {
 } from '@/lib/dates';
 import { springSoft, springSnappy, springGentle, tweenFast, tweenMed, modalSpring, cardSpring, pageSpring, microSpring, sheetVariants, backdropVariants, paletteVariants, staggerFast, focusVariants, useReducedMotionPref } from '@/lib/motion'; // eslint-disable-line @typescript-eslint/no-unused-vars
 import { Btn, IconBtn, EmptyState, TagChip, Sheet, SheetHeader, TaskCard, ProgressRing, ConfirmDialog, PRIORITY_STYLE, Pomodoro } from './ui';
-import type { Task, Project } from '@/lib/types';
+import type { Task, Project, CalEvent } from '@/lib/types';
 import {
   Home, Inbox as InboxIcon, CalendarDays, FolderKanban, Target, Hash, Archive,
   FileText, Settings as SettingsIcon, Bell, BellOff, Sun, Moon, Globe, Plus, X,
   ChevronLeft, ChevronRight, Search, Sparkles, Layers, Check, Trash2,
   Filter, Zap, Flame, Download,
   Upload, RotateCcw, Eye, EyeOff, Clock, ListChecks,
-  Menu, Focus, BarChart2,
+  Menu, Focus, BarChart2, Edit3,
 } from 'lucide-react';
 
 /* ================================================================== */
@@ -844,10 +844,16 @@ export function CalendarView() {
   const createTask = useAppStore((s) => s.createTask);
   const moveTaskDate = useAppStore((s) => s.moveTaskDate);
   const deleteEvent = useAppStore((s) => s.deleteEvent);
+  const updateEvent = useAppStore((s) => s.updateEvent);
   const setSelected = useAppStore((s) => s.setSelected);
   const [creating, setCreating] = useState<string | null>(null);
   const [newTitle, setNewTitle] = useState('');
   const [dragOver, setDragOver] = useState<string | null>(null);
+  const [editingEvent, setEditingEvent] = useState<CalEvent | null>(null);
+  const [editEventTitle, setEditEventTitle] = useState('');
+  const [editEventTime, setEditEventTime] = useState('');
+  const [editEventEndTime, setEditEventEndTime] = useState('');
+  const [editEventColor, setEditEventColor] = useState('#6d8dff');
 
   const tasksByDay = useMemo(() => {
     const m = new Map<string, Task[]>();
@@ -996,11 +1002,16 @@ export function CalendarView() {
                           style={isToday ? { background: 'var(--mz-accent)' } : undefined}>
                           {lang === 'fa' ? num.replace(/\d/g, (x) => '۰۱۲۳۴۵۶۷۸۹'[+x]) : num}
                         </span>
-                        <span className="flex gap-0.5">
+                        <span className="flex gap-0.5 items-center">
                           {dayEvents.slice(0, 3).map((e) => (
-                            <button key={e.id} type="button" aria-label={`${e.title} — delete`}
-                              onClick={(ev) => { ev.stopPropagation(); deleteEvent(e.id); }}
-                              className="w-1.5 h-1.5 rounded-full" style={{ background: e.color }} />
+                            <span key={e.id} className="inline-flex items-center gap-0.5">
+                              <button type="button" aria-label={`${e.title} — ${tr(lang, 'editEvent')}`}
+                                onClick={(ev) => { ev.stopPropagation(); setEditingEvent(e); setEditEventTitle(e.title); setEditEventTime(e.time ?? ''); setEditEventEndTime(e.endTime ?? ''); setEditEventColor(e.color); }}
+                                className="w-1.5 h-1.5 rounded-full hover:scale-125 transition-transform" style={{ background: e.color }} />
+                              <button type="button" aria-label={`${e.title} — ${tr(lang, 'deleteTask')}`}
+                                onClick={(ev) => { ev.stopPropagation(); deleteEvent(e.id); }}
+                                className="opacity-0 group-hover:opacity-100 text-[8px] leading-none" style={{ color: e.color }}>×</button>
+                            </span>
                           ))}
                         </span>
                       </div>
@@ -1101,6 +1112,50 @@ export function CalendarView() {
           {calView === 'agenda' && <AgendaView />}
         </motion.div>
       </AnimatePresence>
+
+      {editingEvent && (
+        <Sheet onClose={() => setEditingEvent(null)}>
+          <SheetHeader title={tr(lang, 'editEvent')} onClose={() => setEditingEvent(null)} />
+          <div className="p-5 flex flex-col gap-4">
+            <label className="flex flex-col gap-1.5">
+              <span className="text-[11px] uppercase tracking-[0.14em] opacity-55">{tr(lang, 'eventTitle')}</span>
+              <input value={editEventTitle} onChange={(e) => setEditEventTitle(e.target.value)} autoFocus
+                className="glass rounded-2xl px-4 h-11 bg-transparent outline-none text-[15px]" aria-label={tr(lang, 'eventTitle')} />
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              <label className="flex flex-col gap-1.5">
+                <span className="text-[11px] uppercase tracking-[0.14em] opacity-55">{tr(lang, 'eventTime')}</span>
+                <input type="time" value={editEventTime} onChange={(e) => setEditEventTime(e.target.value)}
+                  className="glass rounded-xl px-3 h-10 bg-transparent outline-none text-[13.5px]" aria-label={tr(lang, 'eventTime')} />
+              </label>
+              <label className="flex flex-col gap-1.5">
+                <span className="text-[11px] uppercase tracking-[0.14em] opacity-55">{tr(lang, 'endTime')}</span>
+                <input type="time" value={editEventEndTime} onChange={(e) => setEditEventEndTime(e.target.value)}
+                  className="glass rounded-xl px-3 h-10 bg-transparent outline-none text-[13.5px]" aria-label={tr(lang, 'endTime')} />
+              </label>
+            </div>
+            <label className="flex flex-col gap-1.5">
+              <span className="text-[11px] uppercase tracking-[0.14em] opacity-55">{tr(lang, 'color')}</span>
+              <input type="color" value={editEventColor} onChange={(e) => setEditEventColor(e.target.value)}
+                className="glass rounded-xl h-10 bg-transparent outline-none cursor-pointer" aria-label={tr(lang, 'color')} />
+            </label>
+            <div className="flex gap-2">
+              <Btn variant="primary" onClick={() => {
+                if (!editingEvent) return;
+                updateEvent(editingEvent.id, {
+                  title: editEventTitle.trim() || editingEvent.title,
+                  time: editEventTime || null,
+                  endTime: editEventEndTime || null,
+                  allDay: !editEventTime,
+                  color: editEventColor,
+                });
+                setEditingEvent(null);
+              }}><Check size={14} /> {tr(lang, 'save')}</Btn>
+              <Btn variant="glass" onClick={() => setEditingEvent(null)}>{tr(lang, 'cancel')}</Btn>
+            </div>
+          </div>
+        </Sheet>
+      )}
     </motion.div>
   );
 }
@@ -1322,8 +1377,15 @@ function ProjectDetail({ project, onClose, onDelete }: { project: Project; onClo
   const lang = useAppStore((s) => s.settings.lang);
   const createTask = useAppStore((s) => s.createTask);
   const updateTask = useAppStore((s) => s.updateTask);
+  const updateProject = useAppStore((s) => s.updateProject);
   const [confirm, setConfirm] = useState(false);
+  const [editing, setEditing] = useState(false);
   const [title, setTitle] = useState('');
+  const [editName, setEditName] = useState(project.name);
+  const [editIcon, setEditIcon] = useState(project.icon);
+  const [editColor, setEditColor] = useState(project.color);
+  const [editDesc, setEditDesc] = useState(project.description);
+  const [editDeadline, setEditDeadline] = useState(project.deadline ?? '');
   const list = tasks.filter((t) => t.projectId === project.id && !t.archived);
 
   const add = () => {
@@ -1334,24 +1396,79 @@ function ProjectDetail({ project, onClose, onDelete }: { project: Project; onClo
     setTitle('');
   };
 
+  const saveEdit = () => {
+    updateProject(project.id, {
+      name: editName.trim() || project.name,
+      icon: editIcon.trim() || project.icon,
+      color: editColor,
+      description: editDesc,
+      deadline: editDeadline || null,
+    });
+    setEditing(false);
+  };
+
   return (
     <Sheet onClose={onClose} wide labelledBy="proj-title">
       <SheetHeader title={project.name} onClose={onClose}
         right={
-          <button type="button" onClick={() => setConfirm(true)}
-            className="text-[#d97a72] opacity-70 hover:opacity-100 pressable px-2" aria-label={tr(lang, 'deleteTask')}>
-            <Trash2 size={15} />
-          </button>
+          <div className="flex items-center gap-1">
+            <button type="button" onClick={() => { setEditing(!editing); setEditName(project.name); setEditIcon(project.icon); setEditColor(project.color); setEditDesc(project.description); setEditDeadline(project.deadline ?? ''); }}
+              className="opacity-60 hover:opacity-100 pressable px-2" aria-label={tr(lang, 'editProject')}>
+              <Edit3 size={15} />
+            </button>
+            <button type="button" onClick={() => setConfirm(true)}
+              className="text-[#d97a72] opacity-70 hover:opacity-100 pressable px-2" aria-label={tr(lang, 'deleteTask')}>
+              <Trash2 size={15} />
+            </button>
+          </div>
         } />
       <div className="p-5 flex flex-col gap-4 overflow-auto" id="proj-title">
-        <p className="text-[13.5px] opacity-65 leading-relaxed">{project.description || tr(lang, 'description')}</p>
-        <div className="flex gap-3 flex-wrap text-[12.5px]">
-          <span className="glass rounded-full px-3 py-1" style={{ color: project.color }}>{project.icon} {project.name}</span>
-          {project.deadline && <span className="glass rounded-full px-3 py-1">{tr(lang, 'deadline')}: {gregLabel(project.deadline, lang)}</span>}
-          <span className="glass rounded-full px-3 py-1">
-            {list.filter((t) => t.completed).length} / {list.length} {tr(lang, 'ofTotal')}
-          </span>
-        </div>
+        {editing ? (
+          <div className="flex flex-col gap-3">
+            <label className="flex flex-col gap-1.5">
+              <span className="text-[11px] uppercase tracking-[0.14em] opacity-55">{tr(lang, 'name')}</span>
+              <input value={editName} onChange={(e) => setEditName(e.target.value)}
+                className="glass rounded-xl px-3 h-10 bg-transparent outline-none text-[14px]" aria-label={tr(lang, 'name')} />
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              <label className="flex flex-col gap-1.5">
+                <span className="text-[11px] uppercase tracking-[0.14em] opacity-55">{tr(lang, 'icon')}</span>
+                <input value={editIcon} onChange={(e) => setEditIcon(e.target.value)}
+                  className="glass rounded-xl px-3 h-10 bg-transparent outline-none text-[14px]" aria-label={tr(lang, 'icon')} />
+              </label>
+              <label className="flex flex-col gap-1.5">
+                <span className="text-[11px] uppercase tracking-[0.14em] opacity-55">{tr(lang, 'color')}</span>
+                <input type="color" value={editColor} onChange={(e) => setEditColor(e.target.value)}
+                  className="glass rounded-xl h-10 bg-transparent outline-none cursor-pointer" aria-label={tr(lang, 'color')} />
+              </label>
+            </div>
+            <label className="flex flex-col gap-1.5">
+              <span className="text-[11px] uppercase tracking-[0.14em] opacity-55">{tr(lang, 'projectDesc')}</span>
+              <textarea value={editDesc} onChange={(e) => setEditDesc(e.target.value)} rows={2}
+                className="glass rounded-xl px-3 py-2 bg-transparent outline-none text-[13.5px] resize-none" aria-label={tr(lang, 'projectDesc')} />
+            </label>
+            <label className="flex flex-col gap-1.5">
+              <span className="text-[11px] uppercase tracking-[0.14em] opacity-55">{tr(lang, 'projectDeadline')}</span>
+              <input type="date" value={editDeadline} onChange={(e) => setEditDeadline(e.target.value)}
+                className="glass rounded-xl px-3 h-10 bg-transparent outline-none text-[13.5px]" aria-label={tr(lang, 'projectDeadline')} />
+            </label>
+            <div className="flex gap-2">
+              <Btn variant="primary" size="sm" onClick={saveEdit}><Check size={14} /> {tr(lang, 'save')}</Btn>
+              <Btn variant="glass" size="sm" onClick={() => setEditing(false)}>{tr(lang, 'cancel')}</Btn>
+            </div>
+          </div>
+        ) : (
+          <>
+            <p className="text-[13.5px] opacity-65 leading-relaxed">{project.description || tr(lang, 'description')}</p>
+            <div className="flex gap-3 flex-wrap text-[12.5px]">
+              <span className="glass rounded-full px-3 py-1" style={{ color: project.color }}>{project.icon} {project.name}</span>
+              {project.deadline && <span className="glass rounded-full px-3 py-1">{tr(lang, 'deadline')}: {gregLabel(project.deadline, lang)}</span>}
+              <span className="glass rounded-full px-3 py-1">
+                {list.filter((t) => t.completed).length} / {list.length} {tr(lang, 'ofTotal')}
+              </span>
+            </div>
+          </>
+        )}
         <div className="flex items-center gap-3">
           <input value={title} onChange={(e) => setTitle(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') add(); }}
             placeholder={tr(lang, 'newTask')}
@@ -1382,9 +1499,14 @@ export function HabitsView() {
   const toggleHabitDay = useAppStore((s) => s.toggleHabitDay);
   const createHabit = useAppStore((s) => s.createHabit);
   const deleteHabit = useAppStore((s) => s.deleteHabit);
+  const updateHabit = useAppStore((s) => s.updateHabit);
   const [creating, setCreating] = useState(false);
   const [name, setName] = useState('');
   const [confirmId, setConfirmId] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editName, setEditName] = useState('');
+  const [editIcon, setEditIcon] = useState('');
+  const [editTarget, setEditTarget] = useState(1);
   const now = todayKey();
   const week = useMemo(() => Array.from({ length: 7 }, (_, i) => addDaysKey(now, i - 6)), [now]);
 
@@ -1425,8 +1547,14 @@ export function HabitsView() {
                         </p>
                       </div>
                     </div>
-                    <button type="button" onClick={() => setConfirmId(h.id)} aria-label={tr(lang, 'deleteTask')}
-                      className="opacity-35 hover:opacity-100 pressable"><Trash2 size={14} /></button>
+                    <div className="flex items-center gap-0.5">
+                      <button type="button" onClick={() => { setEditingId(h.id); setEditName(h.name); setEditIcon(h.icon); setEditTarget(h.target); }}
+                        className="opacity-35 hover:opacity-100 pressable" aria-label={tr(lang, 'editHabit')}>
+                        <Edit3 size={14} />
+                      </button>
+                      <button type="button" onClick={() => setConfirmId(h.id)} aria-label={tr(lang, 'deleteTask')}
+                        className="opacity-35 hover:opacity-100 pressable"><Trash2 size={14} /></button>
+                    </div>
                   </div>
 
                   <div className="flex items-center justify-between gap-1">
@@ -1476,6 +1604,31 @@ export function HabitsView() {
         <ConfirmDialog title={tr(lang, 'confirmDelete')} body={tr(lang, 'deleteBody')}
           onCancel={() => setConfirmId(null)} onConfirm={() => { if (confirmId) deleteHabit(confirmId); setConfirmId(null); }} />
       )}
+      {editingId && (
+        <Sheet onClose={() => setEditingId(null)}>
+          <SheetHeader title={tr(lang, 'editHabit')} onClose={() => setEditingId(null)} />
+          <div className="p-5 flex flex-col gap-4">
+            <label className="flex flex-col gap-1.5">
+              <span className="text-[11px] uppercase tracking-[0.14em] opacity-55">{tr(lang, 'habitName')}</span>
+              <input value={editName} onChange={(e) => setEditName(e.target.value)} autoFocus
+                className="glass rounded-2xl px-4 h-11 bg-transparent outline-none text-[15px]" aria-label={tr(lang, 'habitName')} />
+            </label>
+            <label className="flex flex-col gap-1.5">
+              <span className="text-[11px] uppercase tracking-[0.14em] opacity-55">{tr(lang, 'icon')}</span>
+              <input value={editIcon} onChange={(e) => setEditIcon(e.target.value)}
+                className="glass rounded-2xl px-4 h-11 bg-transparent outline-none text-[15px]" aria-label={tr(lang, 'icon')} />
+            </label>
+            <div className="flex gap-2">
+              <Btn variant="primary" onClick={() => {
+                if (!editingId) return;
+                updateHabit(editingId, { name: editName.trim() || undefined, icon: editIcon.trim() || undefined, target: Math.max(1, editTarget) });
+                setEditingId(null);
+              }}><Check size={14} /> {tr(lang, 'save')}</Btn>
+              <Btn variant="glass" onClick={() => setEditingId(null)}>{tr(lang, 'cancel')}</Btn>
+            </div>
+          </div>
+        </Sheet>
+      )}
     </motion.div>
   );
 }
@@ -1489,9 +1642,13 @@ export function TagsView() {
   const lang = useAppStore((s) => s.settings.lang);
   const upsertTag = useAppStore((s) => s.upsertTag);
   const deleteTag = useAppStore((s) => s.deleteTag);
+  const updateTag = useAppStore((s) => s.updateTag);
   const [selected, setSelectedTag] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
   const [name, setName] = useState('');
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editName, setEditName] = useState('');
+  const [editColor, setEditColor] = useState('');
 
   const list = selected ? tasks.filter((t) => !t.archived && t.tags.includes(selected)) : [];
 
@@ -1517,6 +1674,10 @@ export function TagsView() {
                 <TagChip name={t.name} color={t.color}
                   onClick={() => setSelectedTag(selected === t.name ? null : t.name)} />
                 <span className="text-[11.5px] opacity-45 tabular-nums">{count}</span>
+                <button type="button" onClick={() => { setEditingId(t.id); setEditName(t.name); setEditColor(t.color); }}
+                  className="opacity-35 hover:opacity-100 pressable" aria-label={tr(lang, 'editTag')}>
+                  <Edit3 size={12} />
+                </button>
               </div>
             );
           })}
@@ -1555,6 +1716,32 @@ export function TagsView() {
             <Btn variant="primary" onClick={() => { if (name.trim()) { upsertTag(name.trim().replace(/^#/, '')); setCreating(false); setName(''); } }}>
               {tr(lang, 'create')}
             </Btn>
+          </div>
+        </Sheet>
+      )}
+      {editingId && (
+        <Sheet onClose={() => setEditingId(null)}>
+          <SheetHeader title={tr(lang, 'editTag')} onClose={() => setEditingId(null)} />
+          <div className="p-5 flex flex-col gap-4">
+            <label className="flex flex-col gap-1.5">
+              <span className="text-[11px] uppercase tracking-[0.14em] opacity-55">{tr(lang, 'tagName')}</span>
+              <input value={editName} onChange={(e) => setEditName(e.target.value)} autoFocus
+                className="glass rounded-2xl px-4 h-11 bg-transparent outline-none text-[15px]" aria-label={tr(lang, 'tagName')} />
+            </label>
+            <label className="flex flex-col gap-1.5">
+              <span className="text-[11px] uppercase tracking-[0.14em] opacity-55">{tr(lang, 'tagColor')}</span>
+              <input type="color" value={editColor} onChange={(e) => setEditColor(e.target.value)}
+                className="glass rounded-xl h-10 bg-transparent outline-none cursor-pointer" aria-label={tr(lang, 'tagColor')} />
+            </label>
+            <div className="flex gap-2">
+              <Btn variant="primary" onClick={() => {
+                if (!editingId) return;
+                const newName = editName.trim().replace(/^#/, '');
+                if (newName) updateTag(editingId, { name: newName, color: editColor });
+                setEditingId(null);
+              }}><Check size={14} /> {tr(lang, 'save')}</Btn>
+              <Btn variant="glass" onClick={() => setEditingId(null)}>{tr(lang, 'cancel')}</Btn>
+            </div>
           </div>
         </Sheet>
       )}

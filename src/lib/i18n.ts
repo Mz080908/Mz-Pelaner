@@ -82,7 +82,11 @@ const en = {
     noSelection: 'Select a task', on: 'On', off: 'Off', tz: 'Timezone', date: 'Date',
     noTasksInGroup: 'No tasks in {group} yet',
     min5: '5 min', min10: '10 min', min15: '15 min', min30: '30 min', hour1: '1 h', day1: '1 d',
-  } as const;
+  editProject: 'Edit project', editHabit: 'Edit habit', editTag: 'Edit tag', editEvent: 'Edit event',
+  save: 'Save', icon: 'Icon', target: 'Target', endTime: 'End time', eventTitle: 'Event title',
+  habitTarget: 'Daily target', projectDesc: 'Project description', projectDeadline: 'Project deadline',
+  tagColor: 'Tag color', eventName: 'Event name', eventTime: 'Event time',
+} as const;
 
 type Dict = typeof en;
 const fa: Record<keyof Dict, string> = {
@@ -167,6 +171,10 @@ const fa: Record<keyof Dict, string> = {
   noSelection: 'یک وظیفه انتخاب کنید', on: 'روشن', off: 'خاموش', tz: 'منطقه زمانی', date: 'تاریخ',
   noTasksInGroup: 'هنوز وظیفه‌ای در {group} نیست',
   min5: '۵ دقیقه', min10: '۱۰ دقیقه', min15: '۱۵ دقیقه', min30: '۳۰ دقیقه', hour1: '۱ ساعت', day1: '۱ روز',
+  editProject: 'ویرایش پروژه', editHabit: 'ویرایش عادت', editTag: 'ویرایش برچسب', editEvent: 'ویرایش رویداد',
+  save: 'ذخیره', icon: 'آیکون', target: 'هدف', endTime: 'پایان', eventTitle: 'عنوان رویداد',
+  habitTarget: 'هدف روزانه', projectDesc: 'توضیحات پروژه', projectDeadline: 'مهلت پروژه',
+  tagColor: 'رنگ برچسب', eventName: 'نام رویداد', eventTime: 'زمان رویداد',
 };
 
 export type TKey = keyof Dict;

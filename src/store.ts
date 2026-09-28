@@ -114,13 +114,16 @@ export interface AppState {
   deleteProject: (id: string) => void;
 
   upsertTag: (name: string, color?: string) => Tag;
+  updateTag: (id: string, patch: Partial<Tag>) => void;
   deleteTag: (idOrName: string) => void;
 
   createHabit: (name: string, icon?: string) => Habit;
+  updateHabit: (id: string, patch: Partial<Habit>) => void;
   toggleHabitDay: (id: string, date?: string) => void;
   deleteHabit: (id: string) => void;
 
   createEvent: (title: string, date: string, time?: string | null) => CalEvent;
+  updateEvent: (id: string, patch: Partial<CalEvent>) => void;
   deleteEvent: (id: string) => void;
 
   createNote: (title?: string) => NoteItem;
@@ -471,6 +474,11 @@ export const useAppStore = create<AppState>((set, get) => ({
     return tag;
   },
 
+  updateTag(id, patch) {
+    set((st) => ({ tags: st.tags.map((t) => t.id === id ? { ...t, ...patch } : t) }));
+    get().persist();
+  },
+
   deleteTag(idOrName) {
     set((st) => ({
       tags: st.tags.filter((t) => t.id !== idOrName && t.name !== idOrName),
@@ -484,6 +492,11 @@ export const useAppStore = create<AppState>((set, get) => ({
     set((st) => ({ habits: [...st.habits, h] }));
     get().persist();
     return h;
+  },
+
+  updateHabit(id, patch) {
+    set((st) => ({ habits: st.habits.map((h) => h.id === id ? { ...h, ...patch } : h) }));
+    get().persist();
   },
 
   toggleHabitDay(id, date) {
@@ -506,6 +519,11 @@ export const useAppStore = create<AppState>((set, get) => ({
     set((st) => ({ events: [...st.events, e] }));
     get().persist();
     return e;
+  },
+
+  updateEvent(id, patch) {
+    set((st) => ({ events: st.events.map((e) => e.id === id ? { ...e, ...patch } : e) }));
+    get().persist();
   },
 
   deleteEvent(id) {
