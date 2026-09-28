@@ -1,41 +1,56 @@
+# Mz Planer
 
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+یک اپلیکیشن بهره‌وری شخصی با رابط شیشه‌ای — وظایف، تقویم جلالی/میلادی، عادت‌ها، پومودورو و حالت تمرکز.
 
-## Getting Started
+A premium personal productivity app: tasks, dual calendar (Jalali/Gregorian), habits, pomodoro and focus mode — in one glass workspace.
 
-First, run the development server:
+## Stack
+
+- Next.js (App Router) + TypeScript strict
+- Tailwind CSS 4
+- Framer Motion
+- Zustand v5 (`useShallow`)
+- `jalaali-js` for the Persian calendar
+- Vitest for unit tests
+
+## Development
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+npm run dev          # http://localhost:3001
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+```bash
+npm test             # unit tests
+npm run build        # production build
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Mobile access during development: `localtunnel --port 3001`.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Data & storage
 
-## Learn More
+- Per-user state in `localStorage` under the `mzplaner.v1` key (export/import JSON from Settings).
+- Supabase (PostgreSQL, Frankfurt) for analytics snapshots and reminder relays.
+- cron-job.org triggers the reminder endpoint for minute-level Telegram reminders.
 
-To learn more about Next.js, take a look at the following resources:
+## Deploy
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Deployed on Vercel at [mz-pelaner.vercel.app](https://mz-pelaner.vercel.app/).
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+vercel --prod
+```
 
-## Deploy on Vercel
+## Keyboard shortcuts
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+| Key | Action |
+| --- | --- |
+| `N` | Quick add |
+| `/` | Search |
+| `Ctrl/Cmd + K` | Command palette |
+| `Space` | Focus mode |
+| `Esc` | Close / clear selection |
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
-=======
-# Mz-Pelaner
-Mz
->>>>>>> 434e7025ddd7b89a175ceb773de23b03b1e36465
+## License
+
+Private — all rights reserved.
