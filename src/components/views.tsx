@@ -1090,6 +1090,17 @@ export function CalendarView() {
                         </span>
                       </div>
                       <AnimatePresence mode="popLayout">
+                        {(eventsByDay.get(day) ?? []).map((e) => (
+                          <motion.button key={e.id} layout type="button"
+                            initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
+                            transition={springSoft}
+                            onClick={() => { setEditingEvent(e); setEditEventTitle(e.title); setEditEventTime(e.time ?? ''); setEditEventEndTime(e.endTime ?? ''); setEditEventColor(e.color); }}
+                            className="text-[11.5px] rounded-lg px-2 py-1.5 cursor-pointer leading-snug text-start truncate"
+                            style={{ background: `color-mix(in srgb, ${e.color} 16%, transparent)`, color: e.color }}>
+                            {e.time && <span className="opacity-70 tabular-nums">{fmtTime(e.time, settings.hour12, lang)} </span>}
+                            {e.title}
+                          </motion.button>
+                        ))}
                         {dayTasks.map((t) => (
                           <motion.button key={t.id} layout type="button"
                             initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
