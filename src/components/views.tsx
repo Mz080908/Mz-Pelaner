@@ -1557,6 +1557,7 @@ export function HabitsView() {
   const [editTarget, setEditTarget] = useState(1);
   const now = todayKey();
   const week = useMemo(() => Array.from({ length: 7 }, (_, i) => addDaysKey(now, i - 6)), [now]);
+  const heatmap = useMemo(() => Array.from({ length: 12 }, (_, i) => addDaysKey(now, -7 * (11 - i))), [now]);
 
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={springSoft}
@@ -1627,6 +1628,23 @@ export function HabitsView() {
                     <Btn size="sm" variant={doneToday ? 'glass' : 'primary'} onClick={() => toggleHabitDay(h.id)}>
                       {doneToday ? <><Check size={14} /> {tr(lang, 'done')}</> : <>{tr(lang, 'add')}</>}
                     </Btn>
+                  </div>
+
+                  {/* 12-week heatmap */}
+                  <div className="flex gap-0.5" role="img" aria-label={`${h.name} ${tr(lang, 'habitHeat')}`}>
+                    {heatmap.map((d) => {
+                      const done = (h.history[d] ?? 0) > 0;
+                      const isToday = d === now;
+                      return (
+                        <button key={d} type="button" onClick={() => toggleHabitDay(h.id, d)}
+                          aria-label={`${h.name} ${relDay(d, lang)}`} aria-pressed={done}
+                          className={cn('flex-1 aspect-square rounded-[3px] pressable transition-colors',
+                            isToday && !done && 'ring-1 ring-[var(--mz-accent)]')}
+                          style={done
+                            ? { background: 'linear-gradient(135deg, var(--mz-accent), #9ad8cf)' }
+                            : { background: 'color-mix(in srgb, var(--mz-ink) 8%, transparent)' }} />
+                      );
+                    })}
                   </div>
                 </motion.div>
               );
