@@ -59,7 +59,7 @@ export function j2g(jy: number, jm: number, jd: number): string {
 export const FA_MONTHS = ['فروردین','اردیبهشت','خرداد','تیر','مرداد','شهریور','مهر','آبان','آذر','دی','بهمن','اسفند'];
 export const FA_WEEKDAYS = ['شنبه','یکشنبه','دوشنبه','سه‌شنبه','چهارشنبه','پنجشنبه','جمعه'];
 export const FA_WEEKDAYS_SHORT = ['ش','ی','د','س','چ','پ','ج'];
-const EN_MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const EN_MONTHS_SHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 // Persian transliterations for Gregorian months (used only when explicitly
 // showing a Gregorian date in Persian UI — never mix with Jalali month names)
 const FA_GREG_MONTHS = ['ژانویه','فوریه','مارس','آوریل','مه','ژوئن','ژوئیه','اوت','سپتامبر','اکتبر','نوامبر','دسامبر'];
@@ -72,7 +72,7 @@ export function faNum(n: number | string): string {
 export function gregLabel(key: string, lang: Lang): string {
   const d = parseKey(key);
   if (lang === 'fa') return `${faNum(d.getDate())} ${FA_GREG_MONTHS[d.getMonth()]} ${faNum(d.getFullYear())}`;
-  return `${EN_MONTHS[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
+  return `${EN_MONTHS_SHORT[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
 }
 
 /** Effective calendar for a language: Persian UI → Jalali, English UI → Gregorian.

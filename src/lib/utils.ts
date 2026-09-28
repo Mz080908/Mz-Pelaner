@@ -38,3 +38,18 @@ export function debounce<A extends unknown[]>(fn: (...args: A) => void, ms: numb
   };
   return wrapped;
 }
+
+export const FA_DIGIT_MAP: Record<string, string> = {
+  '۰': '0', '۱': '1', '۲': '2', '۳': '3', '۴': '4', '۵': '5',
+  '۶': '6', '۷': '7', '۸': '8', '۹': '9',
+  '٠': '0', '١': '1', '٢': '2', '٣': '3', '٤': '4', '٥': '5',
+  '٦': '6', '٧': '7', '٨': '8', '٩': '9',
+};
+
+export function normalizeDigits(s: string): string {
+  return s.replace(/[۰-۹٠-٩]/g, (d) => FA_DIGIT_MAP[d] ?? d);
+}
+
+export function stripNonDigits(s: string): string {
+  return normalizeDigits(s).replace(/\D/g, '');
+}

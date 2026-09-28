@@ -2,7 +2,7 @@
 
 import { motion, AnimatePresence } from 'framer-motion';
 import { useEffect, useMemo, useRef, useState, memo, useId } from 'react';
-import { cn, uid } from '@/lib/utils';
+import { cn, uid, normalizeDigits, stripNonDigits } from '@/lib/utils';
 import { tr, TKey } from '@/lib/i18n';
 import type { Task, Priority, ReminderKind, RepeatKind, Project } from '@/lib/types'; // eslint-disable-line @typescript-eslint/no-unused-vars
 import { todayKey, fmtTime, relDay, diffDays, gregLabel, jalaliLabel, weekdayShort } from '@/lib/dates';
@@ -307,12 +307,20 @@ export const TaskCard = memo(function TaskCard({
 }: {
   task: Task; onSelect?: (id: string) => void; showDate?: boolean; dragging?: boolean; compact?: boolean;
 }) {
-  const { settings, selectedTaskId, projects, tags, toggleTask, setSelected, setFocusTask, lang } = useAppStore(useShallow((s) => ({
+  const { settings, selectedTaskId, projects, tags, toggleTask, setSelected, setFocusTask, focusTaskId, lang } = useAppStore(useShallow((s) => ({
     settings: s.settings, selectedTaskId: s.selectedTaskId, projects: s.projects,
-    tags: s.tags, toggleTask: s.toggleTask, setSelected: s.setSelected, setFocusTask: s.setFocusTask, lang: s.settings.lang,
+    tags: s.tags, toggleTask: s.toggleTask, setSelected: s.setSelected, setFocusTask: s.setFocusTask,
+    focusTaskId: s.focusTaskId, lang: s.settings.lang,
   })));
 
   const selected = selectedTaskId === task.id;
+  /** Rank among active focus tasks (1-based) — null when this task isn't a focus task. */
+  const focusRank = useAppStore((s) => {
+    if (!task.focus || task.completed) return null;
+    const i = s.tasks.findIndex((t) => t.id === task.id && t.focus && !t.completed);
+    return i >= 0 ? i + 1 : null;
+  });
+  const currentFocus = focusTaskId === task.id;
   const project = projects.find((p) => p.id === task.projectId);
   const overdue = !task.completed && task.date && diffDays(task.date, todayKey()) < 0;
   const subDone = task.subtasks.filter((s) => s.done).length;
@@ -340,6 +348,7 @@ export const TaskCard = memo(function TaskCard({
       className={cn(
         'task-card glass rounded-2xl px-4 py-3 flex items-start gap-3 cursor-pointer group relative',
         selected && 'ring-2 ring-[var(--mz-accent)]/50',
+        !selected && currentFocus && 'ring-1 ring-[var(--mz-accent)]/40',
         dragging && 'opacity-60 rotate-1 scale-[1.02]',
         compact && 'py-2.5',
       )}
@@ -385,7 +394,7 @@ export const TaskCard = memo(function TaskCard({
           <span className={cn('text-[14.5px] leading-snug font-medium tracking-tight transition-all', task.completed && 'line-through opacity-55')}>
             {task.title}
           </span>
-          {task.focus && <span className="text-[10px] uppercase tracking-[0.12em] rounded-full px-1.5 py-px" style={{ background: 'color-mix(in srgb, var(--mz-accent) 18%, transparent)', color: 'var(--mz-accent)' }}>#{['01', '02', '03'].slice(0, 1)}</span>}
+          {task.focus && focusRank && <span className="text-[10px] uppercase tracking-[0.12em] rounded-full px-1.5 py-px" style={{ background: 'color-mix(in srgb, var(--mz-accent) 18%, transparent)', color: 'var(--mz-accent)' }}>#{String(focusRank).padStart(2, '0')}</span>}
         </div>
         <div className="flex items-center gap-2.5 mt-1.5 flex-wrap text-[12px] opacity-75">
           {task.time && (
@@ -490,13 +499,13 @@ export function Pomodoro({ compact }: { compact?: boolean }) {
       <div className="flex items-center gap-2">
         <input
           inputMode="numeric" pattern="[0-9]*" aria-label={tr(lang, 'pomoCustom')}
-          value={customMin} onChange={(e) => setCustomMin(e.target.value.replace(/[^\d]/g, '').slice(0, 3))}
+          value={customMin} onChange={(e) => { const v = stripNonDigits(normalizeDigits(e.target.value)).slice(0, 3); setCustomMin(v); }}
           onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); applyCustom(customMin); } }}
           placeholder={tr(lang, 'pomoCustomPlaceholder')}
           className="flex-1 min-w-0 glass rounded-xl h-9 px-3 bg-transparent outline-none text-[13.5px] tabular-nums placeholder:opacity-45"
         />
-        <Btn size="sm" variant="glass" onClick={() => applyCustom(customMin)} disabled={!customMin.trim()}>
-          {lang === 'fa' ? 'اعمال' : 'Apply'}
+        <Btn size="sm" variant="glass" onClick={() => applyCustom(customMin)} disabled={!customMin || Number(customMin) < 1 || Number(customMin) > 180}>
+          {tr(lang, 'apply')}
         </Btn>
       </div>
       <p className="text-[11px] opacity-45 -mt-1">{tr(lang, 'pomoCustom')} · {modeLabel}</p>
@@ -720,14 +729,14 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
 
   const actions = useMemo(() => {
     const list: { id: string; label: string; hint?: string; run: () => void }[] = [
-      { id: 'new', label: tr(lang, 'createTask'), hint: 'N', run: () => { onClose(); setTimeout(() => document.querySelector('[data-quick-add]')?.dispatchEvent(new Event('focus')), 60); store.setSearchOpen(true); store.setCommandOpen(false); } },
-      { id: 'today', label: tr(lang, 'goToToday'), hint: 'T', run: () => { store.setView('today'); store.setCalDate(todayKey()); onClose(); } },
+      { id: 'new', label: tr(lang, 'createTask'), hint: tr(lang, 'nKey'), run: () => { onClose(); setTimeout(() => document.querySelector('[data-quick-add]')?.dispatchEvent(new Event('focus')), 60); store.setSearchOpen(true); store.setCommandOpen(false); } },
+      { id: 'today', label: tr(lang, 'goToToday'), hint: tr(lang, 'tKey'), run: () => { store.setView('today'); store.setCalDate(todayKey()); onClose(); } },
       { id: 'cal', label: tr(lang, 'openCalendar'), run: () => { store.setView('calendar'); onClose(); } },
       { id: 'inbox', label: tr(lang, 'openInbox'), run: () => { store.setView('inbox'); onClose(); } },
       { id: 'theme', label: tr(lang, 'toggleTheme'), run: () => { store.updateSettings({ theme: store.settings.theme === 'dark' ? 'light' : 'dark' }); onClose(); } },
       { id: 'lang', label: tr(lang, 'toggleLang'), run: () => { store.toggleLang(); onClose(); } },
-      { id: 'settings', label: tr(lang, 'openSettings'), hint: '⌘,', run: () => { store.setView('settings'); onClose(); } },
-      { id: 'focus', label: tr(lang, 'focusMode'), hint: 'Space', run: () => { store.setFocusActive(true); onClose(); } },
+      { id: 'settings', label: tr(lang, 'openSettings'), hint: tr(lang, 'cmdComma'), run: () => { store.setView('settings'); onClose(); } },
+      { id: 'focus', label: tr(lang, 'focusMode'), hint: tr(lang, 'space'), run: () => { store.setFocusActive(true); onClose(); } },
       { id: 'habits', label: tr(lang, 'habits'), run: () => { store.setView('habits'); onClose(); } },
       { id: 'projects', label: tr(lang, 'projects'), run: () => { store.setView('projects'); onClose(); } },
       { id: 'archive', label: tr(lang, 'archive'), run: () => { store.setView('archive'); onClose(); } },
@@ -750,7 +759,7 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
             }}
             placeholder={tr(lang, 'cmdPalette')} className="flex-1 bg-transparent outline-none text-[16px] placeholder:opacity-45"
             aria-label={tr(lang, 'cmdPalette')} />
-          <kbd className="text-[10px] opacity-50 border border-[var(--mz-edge)] rounded-md px-1.5 py-0.5">Esc</kbd>
+          <kbd className="text-[10px] opacity-50 border border-[var(--mz-edge)] rounded-md px-1.5 py-0.5">{tr(lang, 'esc')}</kbd>
         </div>
         <div className="max-h-[52vh] overflow-auto -mx-1 px-1">
           <p className="text-[11px] uppercase tracking-[0.14em] opacity-45 px-3 pb-1.5">{tr(lang, 'actions')}</p>
@@ -818,16 +827,23 @@ export function NotificationCenter({ onClose }: { onClose: () => void }) {
 /* Focus mode overlay                                                  */
 /* ------------------------------------------------------------------ */
 export function FocusModeOverlay({ onExit }: { onExit: () => void }) {
-  const { focusTaskId, tasks, lang, settings, toggleTask, pomodoro, pomodoroSet } = useAppStore(useShallow((s) => ({
+  const { focusTaskId, tasks, lang, settings, toggleTask, pomodoro, pomodoroSet, updateSettings } = useAppStore(useShallow((s) => ({
     focusTaskId: s.focusTaskId, tasks: s.tasks, lang: s.settings.lang, settings: s.settings,
-    toggleTask: s.toggleTask, pomodoro: s.pomodoro, pomodoroSet: s.pomodoroSet,
+    toggleTask: s.toggleTask, pomodoro: s.pomodoro, pomodoroSet: s.pomodoroSet, updateSettings: s.updateSettings,
   })));
 
   const focusTasks = tasks.filter((t) => t.focus && !t.completed);
   const task = tasks.find((t) => t.id === focusTaskId) ?? focusTasks[0] ?? tasks.find((t) => !t.completed && t.date === todayKey()) ?? null;
-  const total = pomodoro.mode === 'focus' ? settings.pomoFocus * 60 : settings.pomoShort * 60;
+  const total = (pomodoro.mode === 'focus' ? settings.pomoFocus : pomodoro.mode === 'short' ? settings.pomoShort : settings.pomoLong) * 60;
   const mm = Math.floor(pomodoro.left / 60);
   const ss = pomodoro.left % 60;
+  const modeKey = pomodoro.mode === 'focus' ? 'pomoFocus' : pomodoro.mode === 'short' ? 'pomoShort' : 'pomoLong';
+
+  /** Change the active mode's duration without leaving focus mode. */
+  const setDuration = (mins: number) => {
+    updateSettings({ [modeKey]: mins });
+    pomodoroSet({ running: false, left: mins * 60 });
+  };
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -872,6 +888,26 @@ export function FocusModeOverlay({ onExit }: { onExit: () => void }) {
               <ProgressRing value={total ? pomodoro.left / total : 0} size={210} stroke={12}
                 label={`${mm}:${String(ss).padStart(2, '0')}`} sub={{ focus: tr(lang, 'focus'), short: tr(lang, 'shortBreak'), long: tr(lang, 'longBreak') }[pomodoro.mode]} />
             </motion.div>
+            {!pomodoro.running && (
+              <motion.div
+                variants={{ hidden: { opacity: 0, y: 8 }, show: { opacity: 1, y: 0, transition: springSoft } }}
+                className="flex items-center gap-2 flex-wrap justify-center text-[12px] opacity-70"
+              >
+                <span className="text-[11px] uppercase tracking-[0.16em] opacity-55">{tr(lang, 'pomoDurations')}</span>
+                {([15, 20, 25, 30, 45, 50, 60] as const).map((m) => (
+                  <button
+                    key={m}
+                    type="button"
+                    onClick={() => setDuration(m)}
+                    className={cn('pressable px-2.5 py-1 rounded-full text-[12px]',
+                      settings[modeKey as keyof typeof settings] === m ? 'glass text-mzink opacity-100' : 'opacity-55 hover:opacity-90')
+                    }
+                  >
+                    {m}′
+                  </button>
+                ))}
+              </motion.div>
+            )}
             <motion.div
               variants={{ hidden: { opacity: 0, y: 8 }, show: { opacity: 1, y: 0, transition: springSoft } }}
               className="flex items-center gap-2.5 flex-wrap justify-center">
@@ -955,12 +991,12 @@ export function TaskInspector() {
   const reminderOptions: { value: ReminderKind; label: string }[] = [
     { value: 'none', label: tr(lang, 'noReminder') },
     { value: 'at', label: tr(lang, 'atTime') },
-    { value: '5m', label: '5 min' },
-    { value: '10m', label: '10 min' },
-    { value: '15m', label: '15 min' },
-    { value: '30m', label: '30 min' },
-    { value: '1h', label: '1 h' },
-    { value: '1d', label: '1 d' },
+    { value: '5m', label: tr(lang, 'min5') },
+    { value: '10m', label: tr(lang, 'min10') },
+    { value: '15m', label: tr(lang, 'min15') },
+    { value: '30m', label: tr(lang, 'min30') },
+    { value: '1h', label: tr(lang, 'hour1') },
+    { value: '1d', label: tr(lang, 'day1') },
     { value: 'custom', label: tr(lang, 'date') },
   ];
 

@@ -16,9 +16,9 @@ describe('jalali dates', () => {
   it('formats dual header sensibly', () => {
     const h = headerDate('2026-09-24', 'fa', 'dual');
     expect(h.line1).toContain('مهر');
-    expect(h.line2).toContain('September');
+    expect(h.line2).toContain('Sep');
     const en = headerDate('2026-09-24', 'en', 'dual');
-    expect(en.line1).toContain('September');
+    expect(en.line1).toContain('Sep');
   });
 });
 

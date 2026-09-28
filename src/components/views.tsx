@@ -2,7 +2,7 @@
 
 import { motion, AnimatePresence } from 'framer-motion';
 import { useMemo, useState, useEffect, useRef } from 'react';
-import { cn } from '@/lib/utils';
+import { cn, stripNonDigits, normalizeDigits } from '@/lib/utils';
 import { useAppStore } from '@/store';
 import { tr, TKey } from '@/lib/i18n';
 import {
@@ -81,7 +81,7 @@ export function Sidebar() {
         </button>
       </div>
 
-      <nav className="flex-1 overflow-y-auto px-2 pb-2" aria-label="Sidebar">
+      <nav className="flex-1 overflow-y-auto px-2 pb-2" aria-label={tr(lang, 'menu')}>
         <p className="text-[10.5px] uppercase tracking-[0.16em] opacity-40 px-3 pt-1 pb-2">{tr(lang, 'menu')}</p>
         <ul className="flex flex-col gap-0.5">
           {NAV.map((item) => {
@@ -120,7 +120,7 @@ export function Sidebar() {
         <button type="button" onClick={() => { setFocusActive(true); setOpen(false); }}
           className="w-full flex items-center gap-3 px-3 py-2.5 rounded-2xl pressable text-[14px] text-mzink/65 hover:text-mzink hover:bg-[color-mix(in_srgb,var(--mz-ink)_6%,transparent)]">
           <Focus size={17} /> <span className="flex-1 text-start">{tr(lang, 'focusMode')}</span>
-          <kbd className="text-[10px] border border-[var(--mz-edge)] rounded px-1.5 py-0.5 opacity-60">Space</kbd>
+          <kbd className="text-[10px] border border-[var(--mz-edge)] rounded px-1.5 py-0.5 opacity-60">{tr(lang, 'space')}</kbd>
         </button>
         <div className="w-full flex items-center gap-3 px-3 py-2 rounded-2xl text-[14px] text-mzink/65">
           <button type="button" onClick={() => setDnd(!notifPaused)} aria-pressed={notifPaused}
@@ -149,7 +149,7 @@ export function Sidebar() {
       <motion.aside
         initial={{ opacity: 0, x: -16 }} animate={{ opacity: 1, x: 0 }} transition={springSoft}
         className="hidden lg:flex fixed inset-y-3 start-3 w-[248px] z-40 glass rounded-3xl overflow-hidden"
-        aria-label="Sidebar"
+        aria-label={tr(lang, 'menu')}
       >
         {content}
       </motion.aside>
@@ -168,7 +168,7 @@ export function Sidebar() {
               initial={{ x: -300 }} animate={{ x: 0 }} exit={{ x: -300 }} transition={springSoft}
               onClick={(e) => e.stopPropagation()}
               className="glass-strong w-[272px] h-full m-2 rounded-3xl overflow-hidden"
-              aria-label="Sidebar"
+              aria-label={tr(lang, 'menu')}
             >
               {content}
             </motion.nav>
@@ -203,7 +203,7 @@ export function Header({ line1, line2 }: { line1: string; line2: string | null }
       <div className="glass rounded-3xl px-4 sm:px-6 py-3.5 flex items-center gap-3 sm:gap-4 flex-wrap">
         <div className="min-w-0 flex-1">
           <div className="flex items-baseline gap-2.5 flex-wrap">
-            <h1 className="text-[19px] sm:text-[24px] font-semibold tracking-tight leading-tight truncate">{line1}</h1>
+            <h1 className="text-[17px] sm:text-[22px] font-semibold tracking-tight leading-tight break-words min-w-0">{line1}</h1>
             {line2 && <span className="text-[12.5px] opacity-55 leading-tight">{line2}</span>}
           </div>
           <p className="text-[11.5px] opacity-45 tracking-wide mt-0.5">{tr(lang, 'hints')}</p>
@@ -244,7 +244,7 @@ export function Header({ line1, line2 }: { line1: string; line2: string | null }
             style={{ background: 'linear-gradient(135deg, var(--mz-accent), color-mix(in srgb, var(--mz-accent) 62%, #9ad8cf))' }}
             aria-label={tr(lang, 'newTask')}>
             <Plus size={15} /> <span className="hidden sm:inline">{tr(lang, 'newTask')}</span>
-            <kbd className="hidden lg:inline text-[10px] opacity-80 border border-white/30 rounded px-1">N</kbd>
+            <kbd className="hidden lg:inline text-[10px] opacity-80 border border-white/30 rounded px-1">{tr(lang, 'nKey')}</kbd>
           </button>
         </div>
       </div>
@@ -295,9 +295,17 @@ function TaskGroups({ list, showDate, onDropTask }: { list: Task[]; showDate?: b
             style={over === key ? { boxShadow: 'inset 0 0 0 1.5px var(--mz-accent)' } : undefined}
           >
             {items.length === 0 && (
-              <li className={cn('rounded-2xl border border-dashed border-[var(--mz-edge)] px-4 py-3 text-[12.5px] transition-colors',
-                over === key ? 'text-[var(--mz-accent)] border-[var(--mz-accent)]' : 'opacity-40')}>
-                {over === key ? tr(lang, 'add') : '—'}
+              <li className={cn('rounded-2xl border border-dashed border-[var(--mz-edge)] px-4 py-5 text-[12.5px] transition-colors flex items-center justify-center min-h-[64px]', over === key ? 'text-[var(--mz-accent)] border-[var(--mz-accent)] bg-[color-mix(in_srgb,var(--mz-accent)_3%,transparent)]' : 'opacity-40')}>
+                {over === key ? (
+                  <motion.span initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={springSnappy}>
+                    <Plus size={14} className="mr-1" /> {tr(lang, 'add')}
+                  </motion.span>
+                ) : (
+                  <div className="flex flex-col items-center gap-1.5 text-center">
+                    {icons[key]}
+                    <span>{tr(lang, 'noTasksInGroup', { group: tr(lang, labels[key]) })}</span>
+                  </div>
+                )}
               </li>
             )}
             <AnimatePresence mode="popLayout">
@@ -444,7 +452,7 @@ export function TodayView() {
             </Btn>
           </div>
         </div>
-        <div className="hidden xl:block w-[270px] shrink-0">
+        <div className="w-full md:w-[270px] shrink-0">
           <Pomodoro compact />
         </div>
       </section>
@@ -1859,13 +1867,14 @@ export function SettingsView() {
         <Row label={tr(lang, 'pomoDurations')} hint={`${settings.pomoFocus} / ${settings.pomoShort} · ${tr(lang, 'longBreak')} ${settings.pomoLong}`}>
           <div className="flex items-center gap-2">
             {([['pomoFocus', settings.pomoFocus], ['pomoShort', settings.pomoShort], ['pomoLong', settings.pomoLong]] as const).map(([k, v]) => (
-              <input key={k} type="number" min={1} max={120} value={v}
+              <input key={k} type="text" inputMode="numeric" pattern="[0-9]*" value={String(v)}
                 onChange={(e) => {
-                  const n = Math.max(1, Math.min(120, Number(e.target.value) || 1));
+                  const normalized = stripNonDigits(normalizeDigits(e.target.value));
+                  const n = Math.max(1, Math.min(120, Number(normalized) || 1));
                   updateSettings({ [k]: n });
                 }}
                 className="w-16 h-9 rounded-xl glass bg-transparent outline-none text-center text-[13.5px] tabular-nums"
-                aria-label={k} />
+                aria-label={tr(lang, k === 'pomoFocus' ? 'focus' : k === 'pomoShort' ? 'shortBreak' : 'longBreak')} />
             ))}
           </div>
         </Row>
