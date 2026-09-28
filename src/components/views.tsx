@@ -261,7 +261,13 @@ function TaskGroups({ list, showDate, onDropTask }: { list: Task[]; showDate?: b
 
   const groups = useMemo(() => {
     const g: Record<string, Task[]> = { morning: [], afternoon: [], evening: [], none: [] };
-    const sorted = [...list].sort((a, b) => (a.time ?? 'zz').localeCompare(b.time ?? 'zz') || a.order - b.order);
+    const sorted = [...list].sort((a, b) => {
+      // priority first, then time, then manual order
+      const pa = { urgent: 0, high: 1, normal: 2, low: 3 }[a.priority];
+      const pb = { urgent: 0, high: 1, normal: 2, low: 3 }[b.priority];
+      if (pa !== pb) return pa - pb;
+      return (a.time ?? 'zz').localeCompare(b.time ?? 'zz') || a.order - b.order;
+    });
     for (const t of sorted) g[groupOfTime(t.time)].push(t);
     return g;
   }, [list]);
@@ -768,7 +774,12 @@ export function ScheduledView() {
 
   const { future, past } = useMemo(() => {
     const f = tasks.filter((t) => !t.archived && t.date && t.date >= now)
-      .sort((a, b) => (a.date ?? '').localeCompare(b.date ?? '') || (a.time ?? '99').localeCompare(b.time ?? '99'));
+      .sort((a, b) => {
+        const pa = { urgent: 0, high: 1, normal: 2, low: 3 }[a.priority];
+        const pb = { urgent: 0, high: 1, normal: 2, low: 3 }[b.priority];
+        if (pa !== pb) return pa - pb;
+        return (a.date ?? '').localeCompare(b.date ?? '') || (a.time ?? '99').localeCompare(b.time ?? '99');
+      });
     const p = tasks.filter((t) => !t.archived && t.date && t.date < now)
       .sort((a, b) => (b.date ?? '').localeCompare(a.date ?? ''));
     const map = new Map<string, Task[]>();

@@ -416,6 +416,11 @@ export const TaskCard = memo(function TaskCard({
           {task.subtasks.length > 0 && (
             <span className="inline-flex items-center gap-1"><ListChecks size={11} />{subDone}/{task.subtasks.length}</span>
           )}
+          {task.subtasks.length > 0 && (
+            <span className="w-10 h-1 rounded-full bg-[color-mix(in srgb,var(--mz-ink)_10%,transparent)] overflow-hidden">
+              <span className="block h-full rounded-full" style={{ width: `${(subDone / task.subtasks.length) * 100}%`, background: 'var(--mz-accent)' }} />
+            </span>
+          )}
           {task.tags.map((tn) => {
             const tag = tags.find((t) => t.name === tn);
             return <TagChip key={tn} name={tn} color={tag?.color} small />;
