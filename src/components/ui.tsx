@@ -12,7 +12,7 @@ import { useAppStore } from '@/store';
 import { useShallow } from 'zustand/react/shallow';
 import {
   Bell, Calendar, Check, Clock, Copy, Flag, Hash, ListChecks, Plus, RefreshCw, Search,
-  Trash2, X, Archive, Sparkles, CircleDot, AlertTriangle, Timer, Play, Pause, RotateCcw, Folder, Zap, Command as CommandIcon,
+  Trash2, X, Archive, Sparkles, CircleDot, AlertTriangle, Timer, Play, Pause, RotateCcw, Folder, Zap, Command as CommandIcon, Link2,
 } from 'lucide-react';
 
 export const PRIORITY_STYLE: Record<Priority, { dot: string; text: string; ring: string; key: TKey; hex: string }> = {
@@ -1223,6 +1223,50 @@ export function TaskInspector() {
                 aria-label={tr(lang, 'addSubtask')} />
               <Btn size="sm" variant="glass" onClick={addSubtask} disabled={!newSub.trim()}><Plus size={13} /></Btn>
             </div>
+          </div>
+
+          {/* dependencies */}
+          <div className="flex flex-col gap-1.5">
+            <span className="text-[11px] uppercase tracking-[0.14em] opacity-55 flex items-center gap-1.5">
+              <Link2 size={11} /> {tr(lang, 'dependencies')}
+            </span>
+            {t.dependencies.length > 0 && (
+              <ul className="flex flex-col gap-1">
+                {t.dependencies.map((depId) => {
+                  const dep = useAppStore.getState().tasks.find((x) => x.id === depId);
+                  if (!dep) return null;
+                  return (
+                    <li key={depId} className="flex items-center gap-2 glass rounded-xl px-3 py-2">
+                      <span className={cn('w-2 h-2 rounded-full shrink-0', dep.completed ? 'bg-[var(--mz-accent)]' : 'bg-[color-mix(in_srgb,var(--mz-ink)_30%,transparent)]')} />
+                      <span className={cn('flex-1 text-[13px] truncate', dep.completed && 'line-through opacity-55')}>{dep.title}</span>
+                      <button type="button" aria-label={tr(lang, 'remove')}
+                        onClick={() => patch({ dependencies: t.dependencies.filter((x) => x !== depId) })}
+                        className="opacity-35 hover:opacity-100 pressable"><X size={13} /></button>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+            {t.dependencies.length === 0 && (
+              <p className="text-[12px] opacity-50">{tr(lang, 'noDependencies')}</p>
+            )}
+            <select
+              value=""
+              onChange={(e) => {
+                const id = e.target.value;
+                if (id && !t.dependencies.includes(id)) {
+                  patch({ dependencies: [...t.dependencies, id] });
+                }
+              }}
+              className="glass rounded-xl px-3 h-10 bg-transparent outline-none text-[13px] cursor-pointer"
+              aria-label={tr(lang, 'addDependency')}>
+              <option value="" className="bg-[var(--mz-bg)] text-mzink">{tr(lang, 'addDependency')}</option>
+              {useAppStore.getState().tasks
+                .filter((x) => x.id !== t.id && !t.dependencies.includes(x.id) && !x.archived)
+                .map((x) => (
+                  <option key={x.id} value={x.id} className="bg-[var(--mz-bg)] text-mzink">{x.title}</option>
+                ))}
+            </select>
           </div>
 
           {/* description */}

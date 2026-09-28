@@ -86,6 +86,8 @@ const en = {
   save: 'Save', icon: 'Icon', target: 'Target', endTime: 'End time', eventTitle: 'Event title',
   habitTarget: 'Daily target', projectDesc: 'Project description', projectDeadline: 'Project deadline',
   tagColor: 'Tag color', eventName: 'Event name', eventTime: 'Event time',
+  dependencies: 'Dependencies', addDependency: 'Add dependency', blockedBy: 'Blocked by',
+  noDependencies: 'No dependencies', dependencyHint: 'Tasks that must be completed before this one',
 } as const;
 
 type Dict = typeof en;
@@ -172,9 +174,11 @@ const fa: Record<keyof Dict, string> = {
   noTasksInGroup: 'هنوز وظیفه‌ای در {group} نیست',
   min5: '۵ دقیقه', min10: '۱۰ دقیقه', min15: '۱۵ دقیقه', min30: '۳۰ دقیقه', hour1: '۱ ساعت', day1: '۱ روز',
   editProject: 'ویرایش پروژه', editHabit: 'ویرایش عادت', editTag: 'ویرایش برچسب', editEvent: 'ویرایش رویداد',
-  save: 'ذخیره', icon: 'آیکون', target: 'هدف', endTime: 'پایان', eventTitle: 'عنوان رویداد',
+  save: 'ذخیره', icon: 'آیکون', target: 'هدف', endTime: 'زمان پایان', eventTitle: 'عنوان رویداد',
   habitTarget: 'هدف روزانه', projectDesc: 'توضیحات پروژه', projectDeadline: 'مهلت پروژه',
   tagColor: 'رنگ برچسب', eventName: 'نام رویداد', eventTime: 'زمان رویداد',
+  dependencies: 'وابستگی‌ها', addDependency: 'افزودن وابستگی', blockedBy: 'مسدود شده توسط',
+  noDependencies: 'بدون وابستگی', dependencyHint: 'وظایفی که باید قبل از این تکمیل شوند',
 };
 
 export type TKey = keyof Dict;

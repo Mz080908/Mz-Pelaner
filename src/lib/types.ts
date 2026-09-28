@@ -16,6 +16,7 @@ export interface Task {
   reminder: ReminderKind; reminderAt: string | null;
   subtasks: Subtask[]; repeat: RepeatKind; repeatDays: number[];
   archived: boolean; order: number; focus: boolean;
+  dependencies: string[]; // task IDs that must be completed before this task
   createdAt: string; updatedAt: string;
 }
 export interface Tag { id: string; name: string; color: string }

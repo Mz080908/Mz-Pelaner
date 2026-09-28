@@ -26,7 +26,7 @@ function buildSeedTasks(now: string, projects: Project[]): Task[] {
     completed: false, completedAt: null, reminder: 'none', reminderAt: null,
     subtasks: [], repeat: 'none', repeatDays: [], archived: false,
     focus: false, order: 0, createdAt: now, updatedAt: now,
-    date: now, time: null,
+    date: now, time: null, dependencies: [],
   });
   const t = (patch: Partial<Task> & { title: string; date: string | null; time?: string | null }): Task =>
     ({ ...base(), order: Math.random(), ...patch, time: patch.time ?? null } as Task);
@@ -230,7 +230,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       return true;
     });
     set({
-      tasks: Array.isArray(persisted.tasks) ? persisted.tasks : buildSeedTasks(now, fallbackProjs),
+      tasks: (Array.isArray(persisted.tasks) ? persisted.tasks : buildSeedTasks(now, fallbackProjs)).map((t) => ({ ...t, dependencies: t.dependencies ?? [] })),
       projects: Array.isArray(persisted.projects) ? persisted.projects : fallbackProjs,
       tags: (persisted as unknown as { tags?: Tag[] }).tags ?? SEED_TAGS,
       habits: Array.isArray(persisted.habits) ? persisted.habits : seedHabits(now),
@@ -337,6 +337,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       order: nextOrder(get().tasks),
       createdAt: now,
       updatedAt: now,
+      dependencies: [],
     };
     set((st) => ({ tasks: [task, ...st.tasks] }));
     get().persist();
@@ -355,6 +356,17 @@ export const useAppStore = create<AppState>((set, get) => ({
   toggleTask(id) {
     const now = todayKey();
     let didComplete = false;
+    // dependency gate: block completion while prerequisites are open
+    const current = get().tasks.find((t) => t.id === id);
+    if (current && !current.completed && current.dependencies.length > 0) {
+      const byId = new Map(get().tasks.map((t) => [t.id, t]));
+      const open = current.dependencies.map((d) => byId.get(d)).filter((d): d is Task => !!d && !d.completed);
+      if (open.length > 0) {
+        set({ toast: `${tr(get().settings.lang, 'blockedBy')}: ${open.map((d) => d.title).join(', ')}` });
+        setTimeout(() => set({ toast: null }), 3200);
+        return;
+      }
+    }
     set((st) => ({
       tasks: st.tasks.map((t) => {
         if (t.id !== id) return t;
@@ -387,7 +399,7 @@ export const useAppStore = create<AppState>((set, get) => ({
           const d = new Date(baseDate + 'T12:00:00'); d.setMonth(d.getMonth() + 1); nextDate = todayKey(d);
         }
         if (nextDate) {
-          const clone: Task = { ...t, id: uid('task'), date: nextDate, completed: false, completedAt: null, order: nextOrder(get().tasks), createdAt: now, updatedAt: now };
+          const clone: Task = { ...t, id: uid('task'), date: nextDate, completed: false, completedAt: null, order: nextOrder(get().tasks), createdAt: now, updatedAt: now, dependencies: [] };
           set((st) => ({ tasks: [clone, ...st.tasks] }));
         }
       }
@@ -420,7 +432,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   duplicateTask(id) {
     const src = get().tasks.find((t) => t.id === id);
     if (!src) return;
-    const clone: Task = { ...src, id: uid('task'), title: `${src.title} (copy)`, completed: false, completedAt: null, order: nextOrder(get().tasks), createdAt: todayKey(), updatedAt: todayKey() };
+    const clone: Task = { ...src, id: uid('task'), title: `${src.title} (copy)`, completed: false, completedAt: null, order: nextOrder(get().tasks), createdAt: todayKey(), updatedAt: todayKey(), dependencies: [] };
     set((st) => ({ tasks: [clone, ...st.tasks] }));
     get().persist();
   },
@@ -651,7 +663,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     // validate shallowly
     try {
       set({
-        tasks: p.tasks as Task[],
+        tasks: (p.tasks as Task[]).map((t) => ({ ...t, dependencies: t.dependencies ?? [] })),
         projects: (p.projects as Project[]) ?? [],
         habits: (p.habits as Habit[]) ?? [],
         events: (p.events as CalEvent[]) ?? [],

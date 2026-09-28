@@ -1593,6 +1593,7 @@ export function HabitsView() {
                           <motion.span key={current} initial={{ y: 6, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={springSnappy}>
                             {current}
                           </motion.span> {tr(lang, 'dayStreak')}
+                          {h.target > 1 && <span className="opacity-50">· {tr(lang, 'habitTarget')}: {h.target}</span>}
                         </p>
                       </div>
                     </div>
