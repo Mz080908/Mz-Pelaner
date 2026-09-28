@@ -413,6 +413,7 @@ export function TodayView() {
   const filtered = useMemo(() => todayTasks.filter((t) => {
     if (filter.priority !== 'all' && t.priority !== filter.priority) return false;
     if (filter.tag !== 'all' && !t.tags.includes(filter.tag)) return false;
+    if (filter.project !== 'all' && t.projectId !== filter.project) return false;
     if (filter.completion === 'open' && t.completed) return false;
     if (filter.completion === 'done' && !t.completed) return false;
     return true;
@@ -674,6 +675,7 @@ function FilterSheet({ onClose, onClear }: { onClose: () => void; onClear: () =>
   const filter = useAppStore((s) => s.filter);
   const setFilter = useAppStore((s) => s.setFilter);
   const tags = useAppStore((s) => s.tags);
+  const projects = useAppStore((s) => s.projects);
   return (
     <Sheet onClose={onClose} labelledBy="filter-title">
       <SheetHeader title={tr(lang, 'filters')} onClose={onClose}
@@ -692,6 +694,12 @@ function FilterSheet({ onClose, onClear }: { onClose: () => void; onClear: () =>
           <div className="flex flex-wrap gap-2">
             <Chip active={filter.tag === 'all'} onClick={() => setFilter({ tag: 'all' })}>{tr(lang, 'all')}</Chip>
             {tags.map((t) => <Chip key={t.id} active={filter.tag === t.name} onClick={() => setFilter({ tag: t.name })}>#{t.name}</Chip>)}
+          </div>
+        </Field>
+        <Field label={tr(lang, 'project')}>
+          <div className="flex flex-wrap gap-2">
+            <Chip active={filter.project === 'all'} onClick={() => setFilter({ project: 'all' })}>{tr(lang, 'all')}</Chip>
+            {projects.map((p) => <Chip key={p.id} active={filter.project === p.id} onClick={() => setFilter({ project: p.id })}>{p.icon} {p.name}</Chip>)}
           </div>
         </Field>
         <Field label={tr(lang, 'completion')}>
@@ -1250,14 +1258,20 @@ function DayView({ date }: { date: string }) {
 
 function AgendaView() {
   const tasks = useAppStore((s) => s.tasks);
-  const lang = useAppStore((s) => s.settings.lang);
+  const events = useAppStore((s) => s.events);
+  const settings = useAppStore((s) => s.settings);
+  const lang = settings.lang;
   const now = todayKey();
   const list = useMemo(() =>
     tasks.filter((t) => !t.archived && t.date && t.date >= now)
       .sort((a, b) => (a.date ?? '').localeCompare(b.date ?? '') || (a.time ?? '99').localeCompare(b.time ?? '99'))
       .slice(0, 80), [tasks, now]);
+  const eventList = useMemo(() =>
+    events.filter((e) => e.date >= now)
+      .sort((a, b) => (a.date ?? '').localeCompare(b.date ?? '') || (a.time ?? '99').localeCompare(b.time ?? '99'))
+      .slice(0, 80), [events, now]);
 
-  if (list.length === 0) return <EmptyState title={tr(lang, 'scheduledEmpty')} icon={<ListChecks size={22} />} />;
+  if (list.length === 0 && eventList.length === 0) return <EmptyState title={tr(lang, 'scheduledEmpty')} icon={<ListChecks size={22} />} />;
 
   const headers = list.map((t, i) => i === 0 || list[i - 1].date !== t.date);
   return (
@@ -1275,6 +1289,18 @@ function AgendaView() {
           </div>
         );
       })}
+      {eventList.map((e) => (
+        <div key={e.id}>
+          <p className="text-[12.5px] font-semibold opacity-65 mt-3 mb-1.5 px-1">
+            {relDay(e.date, lang)} <span className="opacity-55 font-normal">· {gregLabel(e.date, lang)}</span>
+          </p>
+          <div className="flex items-center gap-3 py-2 px-1 border-b border-[var(--mz-edge)]/50">
+            <span className="w-16 text-[12px] opacity-55 tabular-nums shrink-0">{e.time ? fmtTime(e.time, settings.hour12, lang) : '—'}</span>
+            <span className="w-2 h-2 rounded-full shrink-0" style={{ background: e.color }} />
+            <span className="text-[13.5px]">{e.title}</span>
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
