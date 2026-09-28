@@ -325,6 +325,11 @@ export const TaskCard = memo(function TaskCard({
   const overdue = !task.completed && task.date && diffDays(task.date, todayKey()) < 0;
   const subDone = task.subtasks.filter((s) => s.done).length;
   const now = todayKey();
+  const blockedBy = useAppStore((s) => {
+    if (task.completed || task.dependencies.length === 0) return [];
+    const byId = new Map(s.tasks.map((t) => [t.id, t]));
+    return task.dependencies.map((d) => byId.get(d)).filter((d): d is Task => !!d && !d.completed);
+  });
   // pointer-tracked tilt + edge light: motion values, zero React re-renders
   const { attachTilt, rx: tiltX, ry: tiltY } = useCardTilt(!dragging);
 
@@ -413,6 +418,11 @@ export const TaskCard = memo(function TaskCard({
           )}
           {task.reminder !== 'none' && <Bell size={11} className="opacity-80" aria-label={tr(lang, 'reminder')} />}
           {task.repeat !== 'none' && <RefreshCw size={11} className="opacity-80" aria-label={tr(lang, 'repeat')} />}
+          {blockedBy.length > 0 && (
+            <span className="inline-flex items-center gap-1 text-[#d97a72]" title={tr(lang, 'blockedBy')}>
+              <Link2 size={11} />{blockedBy.length}
+            </span>
+          )}
           {task.subtasks.length > 0 && (
             <span className="inline-flex items-center gap-1"><ListChecks size={11} />{subDone}/{task.subtasks.length}</span>
           )}
