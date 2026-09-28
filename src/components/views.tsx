@@ -2470,6 +2470,7 @@ export function AnalyticsView() {
           {/* focus bars */}
           <div className="mt-4 pt-3 border-t border-[var(--mz-edge)]">
             <p className="text-[11px] uppercase tracking-[0.14em] opacity-45 mb-2">{tr(lang, 'focusTotal')} · 7d · {mmOf(last7.reduce((a, d) => a + d.focusSec, 0))}</p>
+            <p className="text-[11px] opacity-45 mb-2">{tr(lang, 'pomoSessions')}: {last7.reduce((a, d) => a + Math.floor(d.focusSec / (useAppStore.getState().settings.pomoFocus * 60)), 0)}</p>
             <div className="flex items-end gap-1.5 h-[64px]">
               {last7.map((d, i) => (
                 <div key={d.key} className="flex-1 flex flex-col items-center gap-1 h-full justify-end" title={`${relDay(d.key, lang)} · ${mmOf(d.focusSec)}`}>
