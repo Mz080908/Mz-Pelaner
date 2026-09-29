@@ -153,8 +153,25 @@ export interface AppState {
   setDnd: (paused: boolean) => void;
 
   exportJSON: () => string;
-  importJSON: (text: string) => { ok: boolean; error?: string };
+  importJSON: (text: string, mode?: 'replace' | 'merge') => { ok: boolean; error?: string };
   resetAll: () => void;
+  /** True when the current data is the untouched seed (nothing real to clear). */
+  isSampleData: () => boolean;
+  /** Drop seed/demo tasks, projects, habits, notes and the demo event. */
+  clearSampleData: () => void;
+  /** Days since the last backup export, or null when it has never been done. */
+  backupAgeDays: () => number | null;
+  /** Remember a successful backup export so Settings can show the date. */
+  markBackup: () => void;
+  /** After onboarding (skip, or sample/empty choice) the banner disappears forever. */
+  completeOnboarding: (start: 'sample' | 'empty') => void;
+  /** Push local state to the cloud (no-op when signed out / not configured). */
+  syncPush: () => Promise<{ ok: boolean; error?: string }>;
+  /** Pull the cloud snapshot and merge it into local state. */
+  syncPull: () => Promise<{ ok: boolean; error?: string }>;
+  /** Who is signed in (null = anonymous). */
+  me: { id: string; email: string; name: string | null; picture: string | null } | null;
+  setMe: (m: { id: string; email: string; name: string | null; picture: string | null } | null) => void;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -192,6 +209,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   notifOpen: false,
   pomodoro: { mode: 'focus', running: false, left: DEFAULT_SETTINGS.pomoFocus * 60 },
   notifPaused: false,
+  me: null,
   _hydrated: false,
 
   hydrate() {
@@ -339,7 +357,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       updatedAt: now,
       dependencies: [],
     };
-    set((st) => ({ tasks: [task, ...st.tasks] }));
+    set((st) => ({ tasks: [task, ...st.tasks], settings: { ...st.settings, hasUserData: true } }));
     get().persist();
     return task;
   },
@@ -655,25 +673,63 @@ export const useAppStore = create<AppState>((set, get) => ({
     return JSON.stringify({ version: STORE_VERSION, tasks: s.tasks, projects: s.projects, habits: s.habits, events: s.events, notes: s.notes, notifs: s.notifs, settings: s.settings, stats: s.stats, hiddenWidgets: s.hiddenWidgets, tags: s.tags }, null, 2);
   },
 
-  importJSON(text) {
+  importJSON(text, mode = 'replace') {
     let parsed: unknown;
     try { parsed = JSON.parse(text); } catch { return { ok: false, error: tr(get().settings.lang, 'invalidFile') }; }
     const p = parsed as Record<string, unknown>;
     if (!p || !Array.isArray(p.tasks)) return { ok: false, error: tr(get().settings.lang, 'invalidFile') };
-    // validate shallowly
+    const norm = <T extends { id: string }>(v: unknown): T[] =>
+      (Array.isArray(v) ? (v as T[]) : []).filter((x) => x && typeof x === 'object' && typeof x.id === 'string');
+    const incoming = {
+      tasks: norm<Task>(p.tasks).map((t) => ({ ...t, dependencies: t.dependencies ?? [] })),
+      projects: norm<Project>(p.projects),
+      habits: norm<Habit>(p.habits),
+      events: norm<CalEvent>(p.events),
+      notes: norm<NoteItem>(p.notes),
+      tags: norm<Tag>(p.tags),
+    };
     try {
-      set({
-        tasks: (p.tasks as Task[]).map((t) => ({ ...t, dependencies: t.dependencies ?? [] })),
-        projects: (p.projects as Project[]) ?? [],
-        habits: (p.habits as Habit[]) ?? [],
-        events: (p.events as CalEvent[]) ?? [],
-        notes: (p.notes as NoteItem[]) ?? [],
-        notifs: (p.notifs as AppNotif[]) ?? [],
-        settings: mergeSettings(p.settings as unknown as Settings),
-        stats: (p.stats as Record<string, DayStats>) ?? {},
-        hiddenWidgets: (p.hiddenWidgets as string[]) ?? [],
-        tags: (p.tags as Tag[]) ?? SEED_TAGS,
-      });
+      if (mode === 'merge') {
+        const s = get();
+        // union by id — anything already here wins, backup only adds what's new
+        const union = <T extends { id: string }>(cur: T[], add: T[]): T[] => {
+          const seen = new Set(cur.map((x) => x.id));
+          return [...cur, ...add.filter((x) => !seen.has(x.id))];
+        };
+        const byDate = new Map<string, DayStats>();
+        for (const d of Object.values(s.stats)) byDate.set(d.date, d);
+        for (const d of Object.values((p.stats as Record<string, DayStats>) ?? {})) {
+          const prev = byDate.get(d.date);
+          if (!prev) byDate.set(d.date, d);
+          else byDate.set(d.date, { ...prev, completed: Math.max(prev.completed, d.completed), focusSec: Math.max(prev.focusSec, d.focusSec), energy: prev.energy ?? d.energy });
+        }
+        set({
+          tasks: union(s.tasks, incoming.tasks),
+          projects: union(s.projects, incoming.projects),
+          habits: union(s.habits, incoming.habits),
+          events: union(s.events, incoming.events),
+          notes: union(s.notes, incoming.notes),
+          tags: union(s.tags, incoming.tags),
+          stats: Object.fromEntries([...byDate.entries()].sort((a, b) => a[0].localeCompare(b[0]))),
+          // only the device/identity flags stay local — everything else,
+          // including appearance, comes from the backup being merged
+          settings: { ...mergeSettings(p.settings as unknown as Settings), lastBackupAt: s.settings.lastBackupAt, onboardedAt: s.settings.onboardedAt, hasUserData: s.settings.hasUserData, authProvider: s.settings.authProvider, lastSyncAt: s.settings.lastSyncAt },
+          hiddenWidgets: (p.hiddenWidgets as string[]) ?? s.hiddenWidgets,
+        });
+      } else {
+        set({
+          tasks: incoming.tasks,
+          projects: incoming.projects,
+          habits: incoming.habits,
+          events: incoming.events,
+          notes: incoming.notes,
+          tags: incoming.tags ?? [...SEED_TAGS],
+          notifs: (p.notifs as AppNotif[]) ?? [],
+          settings: mergeSettings(p.settings as unknown as Settings),
+          stats: (p.stats as Record<string, DayStats>) ?? {},
+          hiddenWidgets: (p.hiddenWidgets as string[]) ?? [],
+        });
+      }
       get().persist();
       get().setToast(tr(get().settings.lang, 'imported'));
       return { ok: true };
@@ -701,5 +757,92 @@ export const useAppStore = create<AppState>((set, get) => ({
       pomodoro: { mode: 'focus', running: false, left: DEFAULT_SETTINGS.pomoFocus * 60 },
     });
     get().persist();
+  },
+
+  isSampleData() {
+    const s = get();
+    // still on the seed, or nothing of their own created yet
+    return !s.settings.hasUserData && s.settings.onboardedAt === null;
+  },
+
+  clearSampleData() {
+    const now = todayKey();
+    set({
+      tasks: [],
+      projects: [],
+      habits: [],
+      notes: [],
+      events: [],
+      stats: { [now]: { date: now, completed: 0, focusSec: 0, energy: null } },
+      notifs: [],
+      hiddenWidgets: [],
+      settings: { ...get().settings, hasUserData: true },
+    });
+    get().persist();
+    get().setToast(tr(get().settings.lang, 'imported'));
+  },
+
+  backupAgeDays() {
+    const s = get().settings.lastBackupAt;
+    if (!s) return null;
+    const then = new Date(s).getTime();
+    if (Number.isNaN(then)) return null;
+    return Math.floor((Date.now() - then) / 86400000);
+  },
+
+  markBackup() {
+    const s = get().settings;
+    set({ settings: { ...s, lastBackupAt: new Date().toISOString() } });
+    get().persist();
+  },
+
+  completeOnboarding(start) {
+    const s = get().settings;
+    if (start === 'empty') {
+      set({
+        tasks: [], projects: [], habits: [], notes: [], events: [],
+        settings: { ...s, onboardedAt: new Date().toISOString(), hasUserData: true },
+      });
+    } else {
+      set({ settings: { ...s, onboardedAt: new Date().toISOString() } });
+    }
+    get().persist();
+  },
+
+  setMe(m) { set({ me: m }); },
+
+  async syncPush() {
+    const s = get();
+    if (!s.me) return { ok: false, error: 'signed out' };
+    const { buildSnapshot, pushSnapshot } = await import('@/lib/sync-client');
+    const res = await pushSnapshot(buildSnapshot(s));
+    if (res.ok) {
+      set({ settings: { ...get().settings, lastSyncAt: new Date().toISOString() } });
+      get().persist();
+    }
+    return res;
+  },
+
+  async syncPull() {
+    const s = get();
+    if (!s.me) return { ok: false, error: 'signed out' };
+    const { pullSnapshot } = await import('@/lib/sync-client');
+    const res = await pullSnapshot();
+    if (!res.ok || !res.snapshot) return { ok: false, error: res.error ?? 'no snapshot' };
+    const snap = res.snapshot;
+    const norm = <T extends { id: string }>(v: unknown): T[] =>
+      (Array.isArray(v) ? (v as T[]) : []).filter((x) => x && typeof x === 'object' && typeof x.id === 'string');
+    set({
+      tasks: norm<Task>(snap.tasks).map((t) => ({ ...t, dependencies: t.dependencies ?? [] })),
+      projects: norm<Project>(snap.projects),
+      habits: norm<Habit>(snap.habits),
+      events: norm<CalEvent>(snap.events),
+      notes: norm<NoteItem>(snap.notes),
+      tags: norm<Tag>(snap.tags),
+      stats: (snap.stats as Record<string, DayStats>) ?? {},
+      settings: { ...mergeSettings(snap.settings as unknown as Settings), ...{ lastBackupAt: s.settings.lastBackupAt, onboardedAt: s.settings.onboardedAt, hasUserData: s.settings.hasUserData, authProvider: 'google' } },
+    });
+    get().persist();
+    return { ok: true };
   },
 }));

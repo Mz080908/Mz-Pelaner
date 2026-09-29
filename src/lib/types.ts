@@ -31,12 +31,32 @@ export interface Settings {
   pomoFocus: number; pomoShort: number; pomoLong: number;
   weekStartsOn: 0 | 1; defaultPriority: Priority;
   reduceMotion: boolean; highContrast: boolean; largeText: boolean;
+  /** 'none' | 'google' — cloud sync is always optional, local-first stays default */
+  authProvider: 'none' | 'google';
+  /** ISO date of the last successful local backup export (null = never) */
+  lastBackupAt: string | null;
+  /** ISO date the onboarding flow was completed (null = not done) */
+  onboardedAt: string | null;
+  /** true once the user has created their own first task (sample data can go) */
+  hasUserData: boolean;
+  /** ISO timestamp of the last successful cloud sync (null = never) */
+  lastSyncAt: string | null;
 }
 export interface DayStats { date: string; completed: number; focusSec: number; energy: number | null }
 export interface PersistShape {
   version: number; tasks: Task[]; projects: Project[]; habits: Habit[];
   events: CalEvent[]; notes: NoteItem[]; notifs: AppNotif[];
   settings: Settings; stats: Record<string, DayStats>; hiddenWidgets: string[];
+  tags: Tag[];
+}
+
+/** Cloud snapshot — the subset of state that syncs when the user opts in. */
+export interface CloudSnapshot {
+  version: number;
+  updatedAt: string;
+  tasks: Task[]; projects: Project[]; habits: Habit[];
+  events: CalEvent[]; notes: NoteItem[]; tags: Tag[];
+  settings: Settings; stats: Record<string, DayStats>;
 }
 export const STORAGE_KEY = 'mzplaner.v1';
 export const STORE_VERSION = 1;

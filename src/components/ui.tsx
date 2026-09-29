@@ -567,7 +567,15 @@ export function QuickAdd({ onClose }: { onClose: () => void }) {
   const [value, setValue] = useState('');
   const [extra, setExtra] = useState<{ date: string | null; time: string | null; priority: Priority; projectId: string | null }>({ date: null, time: null, priority: settings.defaultPriority, projectId: null });
   const inputRef = useRef<HTMLInputElement>(null);
-  useEffect(() => { inputRef.current?.focus(); }, []);
+  useEffect(() => {
+    // click-to-schedule preset from the day view (set before opening)
+    const preset = (window as unknown as { __mzQuickPreset?: { date: string; time: string | null } }).__mzQuickPreset;
+    if (preset?.date) {
+      (window as unknown as { __mzQuickPreset?: unknown }).__mzQuickPreset = undefined;
+      setExtra((x) => ({ ...x, date: preset.date, time: preset.time }));
+    }
+    inputRef.current?.focus();
+  }, []);
 
   const parsed = useMemo(() => {
     if (!value.trim()) return null;

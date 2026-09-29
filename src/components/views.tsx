@@ -19,8 +19,9 @@ import {
   ChevronLeft, ChevronRight, Search, Sparkles, Layers, Check, Trash2,
   Filter, Zap, Flame, Download,
   Upload, RotateCcw, Eye, EyeOff, Clock, ListChecks,
-  Menu, Focus, BarChart2, Edit3,
+  Menu, Focus, BarChart2, Edit3, Eraser,
 } from 'lucide-react';
+import { fetchMe, signOut } from '@/lib/sync-client';
 
 /* ================================================================== */
 /* SIDEBAR                                                             */
@@ -394,6 +395,7 @@ export function TodayView() {
   const moveTaskDate = useAppStore((s) => s.moveTaskDate);
   const toggleTask = useAppStore((s) => s.toggleTask);
   const updateTask = useAppStore((s) => s.updateTask);
+  const setSelected = useAppStore((s) => s.setSelected);
   const [filterOpen, setFilterOpen] = useState(false);
   const [reviewOpen, setReviewOpen] = useState(false);
 
@@ -527,6 +529,22 @@ export function TodayView() {
         )}
       </motion.section>
 
+      {/* Gentle high-energy nudge — one line, dismisses itself by completing tasks */}
+      {(() => {
+        const high = (dayStats.energy ?? -1) >= 3;
+        if (!high) return null;
+        const hard = filtered.filter((t) => !t.completed && (t.priority === 'urgent' || t.priority === 'high')).slice(0, 1)[0];
+        if (!hard) return null;
+        return (
+          <div className="glass rounded-3xl px-4 py-3 flex flex-wrap items-center gap-2.5">
+            <Flame size={14} className="text-[#d9a05b] shrink-0" />
+            <p className="flex-1 min-w-[200px] text-[13px] opacity-75">{tr(lang, 'energySuggest')}</p>
+            <button type="button" onClick={() => setSelected(hard.id)}
+              className="pressable text-[13px] font-medium text-[var(--mz-accent)] truncate max-w-full">{hard.title}</button>
+          </div>
+        );
+      })()}
+
       {/* Focus top 3 */}
       <section aria-label={tr(lang, 'focusTop')} className="glass rounded-[28px] p-5">
         <div className="flex items-center justify-between mb-3">
@@ -610,6 +628,40 @@ function DailyReview({ onClose }: { onClose: () => void }) {
               <p className="text-[22px] font-semibold tabular-nums mt-1">{s.value}</p>
             </div>
           ))}
+        </div>
+
+        <div>
+          <p className="text-[11.5px] uppercase tracking-[0.14em] opacity-55 mb-2">{tr(lang, 'doneToday')}</p>
+          {completed.length === 0 ? (
+            <p className="text-[13.5px] opacity-55">{tr(lang, 'todayEmptySub')}</p>
+          ) : (
+            <ul className="flex flex-col gap-1.5">
+              {completed.slice(0, 8).map((t) => (
+                <li key={t.id} className="flex items-center gap-2.5 text-[14px] py-1.5 opacity-70">
+                  <Check size={13} className="text-[var(--mz-accent)] shrink-0" />
+                  <span className="truncate line-through">{t.title}</span>
+                  {t.time && <span className="text-[12px] opacity-70 tabular-nums ms-auto">{fmtTime(t.time, true, lang)}</span>}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+
+        <div>
+          <p className="text-[11.5px] uppercase tracking-[0.14em] opacity-55 mb-2">{tr(lang, 'remainingToday')}</p>
+          {todayTasks.filter((t) => !t.completed).length === 0 ? (
+            <p className="text-[13.5px] opacity-55">{tr(lang, 'greatWork')}</p>
+          ) : (
+            <ul className="flex flex-col gap-1.5">
+              {todayTasks.filter((t) => !t.completed).slice(0, 8).map((t) => (
+                <li key={t.id} className="flex items-center gap-2.5 text-[14px] py-1.5">
+                  <span className={cn('w-2 h-2 rounded-full shrink-0', PRIORITY_STYLE[t.priority].dot)} />
+                  <span className="truncate">{t.title}</span>
+                  {t.time && <span className="text-[12px] opacity-55 tabular-nums ms-auto">{fmtTime(t.time, true, lang)}</span>}
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
 
         <div>
@@ -756,7 +808,10 @@ export function InboxView() {
       </div>
 
       {list.length === 0 ? (
-        <EmptyState title={tr(lang, 'inboxEmpty')} sub={tr(lang, 'inboxEmptySub')} icon={<InboxIcon size={22} />} />
+        <EmptyState title={tr(lang, 'inboxEmpty')} sub={tr(lang, 'inboxEmptySub')} icon={<InboxIcon size={22} />}
+          action={<Btn variant="glass" size="sm" onClick={() => document.querySelector<HTMLInputElement>('[aria-label="' + tr(lang, 'newTask') + '"]')?.focus()}>
+            <Plus size={14} /> {tr(lang, 'addTaskBtn')}
+          </Btn>} />
       ) : (
         <ul className="flex flex-col gap-2.5" aria-label={tr(lang, 'inbox')}>
           <AnimatePresence mode="popLayout">
@@ -808,7 +863,10 @@ export function ScheduledView() {
       </div>
 
       {future.length === 0 && past.length === 0 && (
-        <EmptyState title={tr(lang, 'scheduledEmpty')} icon={<CalendarDays size={22} />} />
+        <EmptyState title={tr(lang, 'scheduledEmpty')} icon={<CalendarDays size={22} />}
+          action={<Btn variant="glass" size="sm" onClick={() => useAppStore.getState().setQuickAddOpen(true)}>
+            <Plus size={14} /> {tr(lang, 'addTaskBtn')}
+          </Btn>} />
       )}
 
       {future.map(([date, items]) => (
@@ -1114,8 +1172,11 @@ export function CalendarView() {
                             initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
                             transition={springSoft}
                             onClick={() => setSelected(t.id)}
-                            className="text-[11.5px] rounded-lg px-2 py-1.5 cursor-pointer leading-snug text-start truncate"
-                            style={{ background: `color-mix(in srgb, ${PRIORITY_STYLE[t.priority].hex} 16%, transparent)` }}>
+                            className="text-[11.5px] rounded-lg px-2 py-1.5 cursor-pointer leading-snug text-start truncate border-s-2"
+                            style={{
+                              background: `color-mix(in srgb, ${PRIORITY_STYLE[t.priority].hex} 16%, transparent)`,
+                              borderInlineStartColor: PRIORITY_STYLE[t.priority].hex,
+                            }}>
                             {t.time && <span className="opacity-65 tabular-nums">{fmtTime(t.time, settings.hour12, lang)} </span>}
                             <span className={cn(t.completed && 'line-through opacity-60')}>{t.title}</span>
                           </motion.button>
@@ -1197,6 +1258,7 @@ function DayView({ date }: { date: string }) {
   const lang = settings.lang;
   const setSelected = useAppStore((s) => s.setSelected);
   const toggleTask = useAppStore((s) => s.toggleTask);
+  const setQuickAddOpen = useAppStore((s) => s.setQuickAddOpen);
   const dayTasks = tasks.filter((t) => !t.archived && t.date === date);
   const dayEvents = events.filter((e) => e.date === date);
   const hours = Array.from({ length: 24 }, (_, i) => i);
@@ -1247,6 +1309,16 @@ function DayView({ date }: { date: string }) {
                     <span className="opacity-65 tabular-nums text-[12px] ms-2">{fmtTime(t.time, settings.hour12, lang)}</span>
                   </button>
                 ))}
+                {/* click-to-schedule: an empty hour becomes a shortcut */}
+                {evs.length === 0 && items.length === 0 && !(h === 0 && allday.length > 0) && (
+                  <button type="button"
+                    onClick={() => window.dispatchEvent(new CustomEvent('mz:quickadd', { detail: { date, time: `${hh}:00` } }))}
+                    aria-label={`${tr(lang, 'scheduleHint')} ${fmtTime(`${hh}:00`, settings.hour12, lang)}`}
+                    className="group w-full text-start rounded-xl px-3 py-1.5 text-[12.5px] opacity-0 hover:opacity-100 focus-visible:opacity-100 transition-opacity min-h-[28px]"
+                    style={{ outline: 'none' }}>
+                    <span className="opacity-70 group-hover:text-[var(--mz-accent)] transition-colors">+ {fmtTime(`${hh}:00`, settings.hour12, lang)}</span>
+                  </button>
+                )}
               </div>
             </div>
           );
@@ -1271,34 +1343,42 @@ function AgendaView() {
       .sort((a, b) => (a.date ?? '').localeCompare(b.date ?? '') || (a.time ?? '99').localeCompare(b.time ?? '99'))
       .slice(0, 80), [events, now]);
 
-  if (list.length === 0 && eventList.length === 0) return <EmptyState title={tr(lang, 'scheduledEmpty')} icon={<ListChecks size={22} />} />;
+  if (list.length === 0 && eventList.length === 0) return (
+    <EmptyState title={tr(lang, 'scheduledEmpty')} icon={<ListChecks size={22} />}
+      action={<Btn variant="glass" size="sm" onClick={() => useAppStore.getState().setQuickAddOpen(true)}>
+        <Plus size={14} /> {tr(lang, 'addTaskBtn')}
+      </Btn>} />
+  );
 
-  const headers = list.map((t, i) => i === 0 || list[i - 1].date !== t.date);
+  // one merged, time-ordered timeline: tasks and events together
+  type Row =
+    | { kind: 'task'; at: string; task: Task }
+    | { kind: 'event'; at: string; event: CalEvent };
+  const rows = useMemo<Row[]>(() => {
+    const t: Row[] = list.map((task) => ({ kind: 'task', at: `${task.date}T${task.time ?? '99'}`, task }));
+    const e: Row[] = eventList.map((event) => ({ kind: 'event', at: `${event.date}T${event.time ?? '99'}`, event }));
+    return [...t, ...e].sort((a, b) => a.at.localeCompare(b.at));
+  }, [list, eventList]);
+
+  const dayOf = (r: Row) => (r.kind === 'task' ? r.task.date! : r.event.date);
+  const isNewDay = (i: number) => i === 0 || dayOf(rows[i]) !== dayOf(rows[i - 1]);
+
   return (
     <div className="flex flex-col gap-1">
-      {list.map((t, i) => {
-        const showHeader = headers[i];
-        return (
-          <div key={t.id}>
-            {showHeader && (
-              <p className="text-[12.5px] font-semibold opacity-65 mt-3 mb-1.5 px-1">
-                {relDay(t.date!, lang)} <span className="opacity-55 font-normal">· {gregLabel(t.date!, lang)}</span>
-              </p>
-            )}
-            <AgendaRow task={t} />
-          </div>
-        );
-      })}
-      {eventList.map((e) => (
-        <div key={e.id}>
-          <p className="text-[12.5px] font-semibold opacity-65 mt-3 mb-1.5 px-1">
-            {relDay(e.date, lang)} <span className="opacity-55 font-normal">· {gregLabel(e.date, lang)}</span>
-          </p>
-          <div className="flex items-center gap-3 py-2 px-1 border-b border-[var(--mz-edge)]/50">
-            <span className="w-16 text-[12px] opacity-55 tabular-nums shrink-0">{e.time ? fmtTime(e.time, settings.hour12, lang) : '—'}</span>
-            <span className="w-2 h-2 rounded-full shrink-0" style={{ background: e.color }} />
-            <span className="text-[13.5px]">{e.title}</span>
-          </div>
+      {rows.map((r, i) => (
+        <div key={r.kind === 'task' ? r.task.id : r.event.id}>
+          {isNewDay(i) && (
+            <p className="text-[12.5px] font-semibold opacity-65 mt-3 mb-1.5 px-1">
+              {relDay(dayOf(r), lang)} <span className="opacity-55 font-normal">· {gregLabel(dayOf(r), lang)}</span>
+            </p>
+          )}
+          {r.kind === 'task' ? <AgendaRow task={r.task} /> : (
+            <div className="flex items-center gap-3 py-2 px-1 border-b border-[var(--mz-edge)]/50">
+              <span className="w-16 text-[12px] opacity-55 tabular-nums shrink-0">{r.event.time ? fmtTime(r.event.time, settings.hour12, lang) : '—'}</span>
+              <span className="w-2 h-2 rounded-full shrink-0" style={{ background: r.event.color }} />
+              <span className="text-[13.5px]">{r.event.title}</span>
+            </div>
+          )}
         </div>
       ))}
     </div>
@@ -1731,7 +1811,8 @@ export function TagsView() {
       </div>
 
       {tags.length === 0 ? (
-        <EmptyState title={tr(lang, 'tagsEmpty')} icon={<Hash size={22} />} />
+        <EmptyState title={tr(lang, 'tagsEmpty')} icon={<Hash size={22} />}
+          action={<Btn variant="glass" size="sm" onClick={() => setCreating(true)}><Plus size={14} /> {tr(lang, 'addTag')}</Btn>} />
       ) : (
         <div className="flex flex-wrap gap-2.5">
           {tags.map((t) => {
@@ -2006,13 +2087,31 @@ export function SettingsView() {
   const exportJSON = useAppStore((s) => s.exportJSON);
   const importJSON = useAppStore((s) => s.importJSON);
   const resetAll = useAppStore((s) => s.resetAll);
+  const markBackup = useAppStore((s) => s.markBackup);
+  const backupAgeDays = useAppStore((s) => s.backupAgeDays);
+  const clearSample = useAppStore((s) => s.clearSampleData);
+  const isSample = useAppStore((s) => s.isSampleData);
   const setToast = useAppStore((s) => s.setToast);
+  const me = useAppStore((s) => s.me);
+  const setMe = useAppStore((s) => s.setMe);
+  const syncPush = useAppStore((s) => s.syncPush);
+  const syncPull = useAppStore((s) => s.syncPull);
   const lang = settings.lang;
   const [importOpen, setImportOpen] = useState(false);
   const [resetOpen, setResetOpen] = useState(false);
   const [importText, setImportText] = useState('');
   const [importErr, setImportErr] = useState<string | null>(null);
+  const [importMode, setImportMode] = useState<'replace' | 'merge'>('replace');
+  const [syncing, setSyncing] = useState(false);
+  const [syncAvailable, setSyncAvailable] = useState<boolean | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  // who is signed in? (anonymous is the default, local-first path)
+  useEffect(() => {
+    let alive = true;
+    void fetchMe().then((r) => { if (alive) { setMe(r.user); setSyncAvailable(r.available); } });
+    return () => { alive = false; };
+  }, [setMe]);
 
   const doExport = () => {
     try {
@@ -2024,19 +2123,30 @@ export function SettingsView() {
       a.download = `mz-planer-backup-${todayKey()}.json`;
       a.click();
       URL.revokeObjectURL(url);
-      setToast(tr(lang, 'exported'));
+      markBackup();
+      setToast(tr(lang, 'backupOk'));
     } catch {
       setToast(tr(lang, 'invalidFile'));
     }
   };
 
   const doImport = (text: string) => {
-    const res = importJSON(text);
+    const res = importJSON(text, importMode);
     if (!res.ok) setImportErr(res.error ?? tr(lang, 'invalidFile'));
     else {
       setImportOpen(false);
       setImportErr(null);
       setImportText('');
+    }
+  };
+
+  const doSync = async (mode: 'push' | 'pull') => {
+    setSyncing(true);
+    try {
+      const res = mode === 'push' ? await syncPush() : await syncPull();
+      setToast(res.ok ? tr(lang, 'syncOk') : `${tr(lang, 'syncFail')}${res.error ? ` · ${res.error}` : ''}`);
+    } finally {
+      setSyncing(false);
     }
   };
 
@@ -2063,6 +2173,21 @@ export function SettingsView() {
         <h2 className="text-[27px] font-semibold tracking-tight">{tr(lang, 'settings')}</h2>
         <p className="text-[14px] opacity-55">{tr(lang, 'storageWarn')}</p>
       </div>
+
+      {(() => {
+        const age = backupAgeDays();
+        const due = age === null || age >= 7;
+        if (!due || !settings.hasUserData) return null;
+        return (
+          <div className="glass rounded-3xl px-4 py-3 flex flex-wrap items-center gap-3 border border-[color-mix(in_srgb,var(--mz-accent)_35%,transparent)]">
+            <Zap size={15} className="text-[var(--mz-accent)] shrink-0" />
+            <p className="flex-1 min-w-[180px] text-[13.5px] leading-relaxed">
+              {tr(lang, 'backupBanner', { d: age ?? 0 })}
+            </p>
+            <Btn variant="primary" size="sm" onClick={doExport}><Download size={14} /> {tr(lang, 'downloadBackup')}</Btn>
+          </div>
+        );
+      })()}
 
       <Section title={tr(lang, 'appearance')}>
         <Row label={tr(lang, 'theme')}>
@@ -2141,12 +2266,64 @@ export function SettingsView() {
 
       <Section title={tr(lang, 'data')}>
         <div className="flex flex-wrap gap-2 pt-2 pb-1">
-          <Btn variant="glass" size="sm" onClick={doExport}><Download size={14} /> {tr(lang, 'exportData')}</Btn>
+          <Btn variant="glass" size="sm" onClick={doExport}><Download size={14} /> {tr(lang, 'downloadBackup')}</Btn>
           <Btn variant="glass" size="sm" onClick={() => { setImportErr(null); setImportOpen(true); }}>
             <Upload size={14} /> {tr(lang, 'importData')}
           </Btn>
           <Btn variant="danger" size="sm" onClick={() => setResetOpen(true)}><RotateCcw size={14} /> {tr(lang, 'resetApp')}</Btn>
         </div>
+        <Row label={tr(lang, 'lastBackup')}>
+          <span className="text-[13px] opacity-70 tabular-nums">
+            {settings.lastBackupAt
+              ? new Date(settings.lastBackupAt).toLocaleDateString(lang === 'fa' ? 'fa-IR' : 'en-GB')
+              : tr(lang, 'neverLabel')}
+          </span>
+        </Row>
+        {isSample() && (
+          <Row label={tr(lang, 'sampleData')}>
+            <Btn variant="glass" size="sm" onClick={() => { clearSample(); setToast(tr(lang, 'imported')); }}>
+              <Eraser size={14} /> {tr(lang, 'clearSample')}
+            </Btn>
+          </Row>
+        )}
+      </Section>
+
+      <Section title={tr(lang, 'account')}>
+        <p className="text-[12.5px] opacity-60 leading-relaxed pb-2">{tr(lang, 'syncPrivacy')}</p>
+        {syncAvailable === false ? (
+          <p className="text-[13px] opacity-60">{tr(lang, 'syncUnavailable')}</p>
+        ) : me ? (
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center gap-3">
+              {me.picture
+                ? <img src={me.picture} alt="" className="w-9 h-9 rounded-full object-cover" referrerPolicy="no-referrer" />
+                : <span className="w-9 h-9 rounded-full glass flex items-center justify-center text-[14px] font-semibold">{me.email.slice(0, 1).toUpperCase()}</span>}
+              <div className="min-w-0">
+                <p className="text-[14px] font-medium truncate">{me.name ?? me.email}</p>
+                <p className="text-[12px] opacity-55 truncate">{me.email}</p>
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Btn variant="glass" size="sm" disabled={syncing} onClick={() => void doSync('push')}><Upload size={14} /> {tr(lang, 'syncNow')}</Btn>
+              <Btn variant="glass" size="sm" disabled={syncing} onClick={() => void doSync('pull')}><Download size={14} /> {tr(lang, 'importData')}</Btn>
+              <Btn variant="ghost" size="sm" onClick={() => { void signOut().then(() => { setMe(null); setToast(tr(lang, 'signOut')); }); }}>{tr(lang, 'signOut')}</Btn>
+            </div>
+            <Row label={tr(lang, 'lastSync')}>
+              <span className="text-[13px] opacity-70 tabular-nums">
+                {settings.lastSyncAt
+                  ? new Date(settings.lastSyncAt).toLocaleString(lang === 'fa' ? 'fa-IR' : 'en-GB')
+                  : tr(lang, 'neverLabel')}
+              </span>
+            </Row>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-2.5">
+            <Btn variant="primary" size="sm" onClick={() => { window.location.href = '/api/auth/start'; }}>
+              <Globe size={14} /> {tr(lang, 'continueGoogle')}
+            </Btn>
+            <p className="text-[12px] opacity-55">{tr(lang, 'syncPrivacy')}</p>
+          </div>
+        )}
       </Section>
 
       <Section title={tr(lang, 'accessibility')}>
@@ -2177,6 +2354,15 @@ export function SettingsView() {
           <SheetHeader title={tr(lang, 'importData')} onClose={() => setImportOpen(false)} />
           <div className="p-5 flex flex-col gap-4" id="import-title">
             <p className="text-[13.5px] opacity-70 leading-relaxed">{tr(lang, 'importBody')}</p>
+            <div className="flex flex-col gap-2">
+              <span className="text-[11.5px] uppercase tracking-[0.14em] opacity-55">{tr(lang, 'importMode')}</span>
+              <Segmented value={importMode} label={tr(lang, 'importMode')}
+                onChange={(v) => setImportMode(v as 'replace' | 'merge')}
+                options={[{ value: 'replace', label: tr(lang, 'replaceImport') }, { value: 'merge', label: tr(lang, 'mergeImport') }]} />
+              <p className="text-[12.5px] opacity-60 leading-relaxed">
+                {importMode === 'merge' ? tr(lang, 'importMergeHint') : tr(lang, 'importReplaceHint')}
+              </p>
+            </div>
             <textarea value={importText} onChange={(e) => setImportText(e.target.value)} rows={7}
               placeholder='{"version": 1, ...}'
               className="glass rounded-2xl p-3.5 bg-transparent outline-none text-[13px] font-mono resize-none"

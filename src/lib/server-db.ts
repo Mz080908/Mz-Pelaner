@@ -76,6 +76,21 @@ export async function initSchema(): Promise<void> {
       
       CREATE INDEX IF NOT EXISTS idx_relay_ts 
         ON relay_snapshots (ts DESC);
+
+      CREATE TABLE IF NOT EXISTS app_users (
+        id          TEXT PRIMARY KEY,
+        email       TEXT NOT NULL UNIQUE,
+        name        TEXT,
+        picture     TEXT,
+        created_at  TIMESTAMPTZ DEFAULT NOW(),
+        last_login  TIMESTAMPTZ DEFAULT NOW()
+      );
+
+      CREATE TABLE IF NOT EXISTS user_snapshots (
+        user_id     TEXT PRIMARY KEY REFERENCES app_users(id) ON DELETE CASCADE,
+        payload     JSONB NOT NULL,
+        updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
     `);
     schemaInited = true;
   } finally {

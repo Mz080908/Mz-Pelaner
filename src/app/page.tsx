@@ -11,6 +11,7 @@ import {
   ProjectsView, HabitsView, TagsView, ArchiveView, NotesView, SettingsView, AnalyticsView,
 } from '@/components/views';
 import { AnalyticsBeacon } from '@/components/AnalyticsBeacon';
+import { Onboarding } from '@/components/Onboarding';
 import {
   TaskInspector, CommandPalette, NotificationCenter, Toast, QuickAdd,
   SearchOverlay, FocusModeOverlay,
@@ -78,6 +79,20 @@ export default function Page() {
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
+  }, [mounted]);
+
+  // click-to-schedule from the calendar day view — opens QuickAdd, which
+  // picks up the preset date/time via window.__mzQuickPreset
+  useEffect(() => {
+    if (!mounted) return;
+    const h = (e: Event) => {
+      const d = (e as CustomEvent<{ date?: string; time?: string }>).detail;
+      if (!d?.date) return;
+      (window as unknown as { __mzQuickPreset?: { date: string; time: string | null } }).__mzQuickPreset = { date: d.date, time: d.time ?? null };
+      useAppStore.getState().setQuickAddOpen(true);
+    };
+    window.addEventListener('mz:quickadd', h);
+    return () => window.removeEventListener('mz:quickadd', h);
   }, [mounted]);
 
   // reminder / overdue notification worker
@@ -233,6 +248,7 @@ export default function Page() {
       <AnimatePresence>{notifOpen && <NotificationCenter onClose={() => useAppStore.getState().setNotifOpen(false)} />}</AnimatePresence>
       <AnimatePresence>{focusActive && <FocusModeOverlay onExit={() => useAppStore.getState().setFocusActive(false)} />}</AnimatePresence>
       <AnimatePresence>{toast && <Toast message={toast} />}</AnimatePresence>
+      <Onboarding />
       <AnalyticsBeacon />
     </>
   );

@@ -28,6 +28,12 @@ export const DEFAULT_SETTINGS: Settings = {
   reduceMotion: false,
   highContrast: false,
   largeText: false,
+  // Cloud sync stays opt-in: local-first is always the default.
+  authProvider: 'none',
+  lastBackupAt: null,
+  onboardedAt: null,
+  hasUserData: false,
+  lastSyncAt: null,
 };
 
 export function seedProjects(now = todayKey()): Project[] {

@@ -95,15 +95,23 @@ export function parseQuickAdd(input: string, now = todayKey()): ParsedTask {
     out.repeat = 'daily'; rest = rest.replace(/\bevery\s*day\b/gi, ' ').replace(/هر\s*روز/g, ' ');
   } else if (/\bevery\s+weekday\b|\bweekdays\b/.test(lower()) || rest.includes('روزهای کاری') || rest.includes('روز کاری')) {
     out.repeat = 'weekdays'; rest = rest.replace(/\bevery\s*weekdays?\b/gi, ' ').replace(/روزهای?\s*کاری/g, ' ');
-  } else if (/\bevery\s+week\b|\bweekly\b/.test(lower()) || rest.includes('هر هفته')) {
-    out.repeat = 'weekly'; rest = rest.replace(/\bevery\s*week\b|\bweekly\b/gi, ' ').replace(/هر\s*هفته/g, ' ');
+  } else if (/\bevery\s+week\b|weekly\b/.test(lower()) || rest.includes('هر هفته')) {
+    out.repeat = 'weekly'; rest = rest.replace(/\bevery\s+week\b|\bweekly\b/gi, ' ').replace(/هر\s*هفته/g, ' ');
   } else if (/\bevery\s+month\b|\bmonthly\b/.test(lower()) || rest.includes('هر ماه')) {
     out.repeat = 'monthly'; rest = rest.replace(/\bevery\s*month\b|\bmonthly\b/gi, ' ').replace(/هر\s*ماه/g, ' ');
   } else {
-    const em = lower().match(/\bevery\s+(\w+day)\b/);
-    if (em && EN_WEEKDAYS[em[1]] !== undefined) {
-      out.repeat = 'weekly'; out.date = nextWeekday(now, EN_WEEKDAYS[em[1]]);
-      rest = rest.replace(new RegExp(`\\bevery\\s+${em[1]}\\b`, 'i'), ' ');
+    // "هر شنبه" / "هر روز شنبه" — a named weekday with هر means weekly recurrence
+    const faEvery = rest.match(/هر\s*(?:روز\s*)?([\p{L}]+)/u);
+    if (faEvery && FA_WEEKDAYS[faEvery[1]] !== undefined) {
+      out.repeat = 'weekly';
+      out.date = nextWeekday(now, FA_WEEKDAYS[faEvery[1]]);
+      rest = rest.replace(faEvery[0], ' ');
+    } else {
+      const em = lower().match(/\bevery\s+(\w+day)\b/);
+      if (em && EN_WEEKDAYS[em[1]] !== undefined) {
+        out.repeat = 'weekly'; out.date = nextWeekday(now, EN_WEEKDAYS[em[1]]);
+        rest = rest.replace(new RegExp(`\\bevery\\s+${em[1]}\\b`, 'i'), ' ');
+      }
     }
   }
 
@@ -111,9 +119,9 @@ export function parseQuickAdd(input: string, now = todayKey()): ParsedTask {
   if (/\burgent\b|!!/.test(lower()) || /(ضروری|اورژانسی|فوری)/.test(rest)) {
     out.priority = 'urgent';
     rest = rest.replace(/\burgent\b/gi, ' ').replace(/!!/g, ' ').replace(/ضروری|اورژانسی|فوری/g, ' ');
-  } else if (/\bhigh\b|\bimportant\b|!/.test(lower()) || /(مهم|بالا|پر اولویت)/.test(rest)) {
+  } else if (/\bhigh\b|\bimportant\b|!/.test(lower()) || /(مهم|بالا|پر اولویت|اولویت بالا|اولویت پایین)/.test(rest)) {
     out.priority = 'high';
-    rest = rest.replace(/\bhigh\b|\bimportant\b/gi, ' ').replace(/مهم|بالا|پر\s*اولویت/g, ' ');
+    rest = rest.replace(/\bhigh\b|\bimportant\b/gi, ' ').replace(/پر\s*اولویت|اولویت\s*(بالا|پایین|زیاد|کم)|مهم|بالا/g, ' ');
     // keep single "!" only if it was priority marker at end; preserve mid-sentence "!"
     if (/!\s*$/.test(rest)) rest = rest.replace(/!\s*$/, ' ');
   } else if (/\blow\b/.test(lower()) || /(کم‌اهمیت|کم اهمیت|کم)/.test(rest)) {
