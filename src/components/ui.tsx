@@ -325,11 +325,12 @@ export const TaskCard = memo(function TaskCard({
   const overdue = !task.completed && task.date && diffDays(task.date, todayKey()) < 0;
   const subDone = task.subtasks.filter((s) => s.done).length;
   const now = todayKey();
-  const blockedBy = useAppStore((s) => {
-    if (task.completed || task.dependencies.length === 0) return [];
+  const blockedBy = useAppStore(useShallow((s) => {
+    const deps = task.dependencies ?? [];
+    if (task.completed || deps.length === 0) return [];
     const byId = new Map(s.tasks.map((t) => [t.id, t]));
-    return task.dependencies.map((d) => byId.get(d)).filter((d): d is Task => !!d && !d.completed);
-  });
+    return deps.map((d) => byId.get(d)).filter((d): d is Task => !!d && !d.completed);
+  }));
   // pointer-tracked tilt + edge light: motion values, zero React re-renders
   const { attachTilt, rx: tiltX, ry: tiltY } = useCardTilt(!dragging);
 
