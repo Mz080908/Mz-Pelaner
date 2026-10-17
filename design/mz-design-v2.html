@@ -1,0 +1,1174 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Mz Planer — سیستم طراحی نسخه ۲</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800&family=Geist:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+/* ============================================================
+   MZ DESIGN SYSTEM v2 — tokens
+   ============================================================ */
+:root{
+  /* surfaces — dark-first, deep charcoal-navy */
+  --bg:#0A0D13; --bg-1:#0E1219; --surface:#131824; --surface-2:#191F2D; --surface-3:#212839;
+  --line:rgba(255,255,255,.07); --line-2:rgba(255,255,255,.13); --line-3:rgba(255,255,255,.2);
+  /* ink */
+  --ink:#EEF1F8; --ink-2:#A3ACC4; --ink-3:#6B7490; --ink-4:#4A5268;
+  /* accents — one primary (iris), muted pastels for state */
+  --iris:#7C8CFF; --iris-2:#9BA7FF; --iris-dim:rgba(124,140,255,.14);
+  --mint:#7FD6C3; --mint-dim:rgba(127,214,195,.13);
+  --amber:#E8B871; --amber-dim:rgba(232,184,113,.13);
+  --rose:#FF8A94; --rose-dim:rgba(255,138,148,.13);
+  --violet:#B49AFF; --violet-dim:rgba(180,154,255,.13);
+  /* elevation */
+  --sh-1:0 1px 2px rgba(0,0,0,.32), 0 6px 18px -8px rgba(0,0,0,.5);
+  --sh-2:0 2px 4px rgba(0,0,0,.32), 0 16px 40px -16px rgba(0,0,0,.6);
+  --sh-3:0 4px 8px rgba(0,0,0,.36), 0 32px 80px -24px rgba(0,0,0,.7);
+  --sh-iris:0 6px 24px -10px rgba(124,140,255,.55);
+  --inner-hl:inset 0 1px 0 rgba(255,255,255,.09);
+  /* radius */
+  --r-sm:10px; --r-md:14px; --r-lg:20px; --r-xl:28px; --r-2xl:36px; --r-full:999px;
+  /* glass — reserved for genuinely elevated surfaces only */
+  --glass:rgba(19,24,36,.72); --glass-2:rgba(25,31,45,.82);
+  --blur:blur(28px) saturate(1.45);
+  /* motion — springs, never linear */
+  --sp-snappy:cubic-bezier(.34,1.56,.64,1);
+  --sp-soft:cubic-bezier(.22,1,.36,1);
+  --e-fast:.16s var(--sp-soft); --e-med:.28s var(--sp-soft); --e-slow:.44s var(--sp-soft);
+  --font-fa:"Vazirmatn",system-ui,sans-serif;
+  --font-en:"Geist","Vazirmatn",system-ui,sans-serif;
+}
+[data-mode="light"]{
+  --bg:#F6F6F3; --bg-1:#FFFFFF; --surface:#FFFFFF; --surface-2:#F1F2F6; --surface-3:#E7E9F0;
+  --line:rgba(16,22,38,.08); --line-2:rgba(16,22,38,.14); --line-3:rgba(16,22,38,.24);
+  --ink:#131A2A; --ink-2:#5A6480; --ink-3:#8B93A9; --ink-4:#B4BBCB;
+  --iris:#5B6EF0; --iris-2:#4A5CE0; --iris-dim:rgba(91,110,240,.1);
+  --sh-1:0 1px 2px rgba(20,28,50,.06), 0 6px 18px -8px rgba(20,28,50,.12);
+  --sh-2:0 2px 4px rgba(20,28,50,.07), 0 16px 40px -16px rgba(20,28,50,.16);
+  --sh-3:0 4px 8px rgba(20,28,50,.08), 0 32px 80px -24px rgba(20,28,50,.2);
+  --glass:rgba(255,255,255,.76); --glass-2:rgba(255,255,255,.9);
+  --inner-hl:inset 0 1px 0 rgba(255,255,255,.9);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  font-family:var(--font-fa); background:var(--bg); color:var(--ink);
+  -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+  line-height:1.6; transition:background .4s var(--sp-soft),color .4s var(--sp-soft);
+}
+body[dir="ltr"],body[dir="ltr"] input{font-family:var(--font-en)}
+/* RTL: never letter-space Persian — it breaks connected script */
+body[dir="rtl"] .lbl{text-transform:none;letter-spacing:0!important;font-weight:600}
+.lbl{font-size:11.5px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3)}
+::selection{background:var(--iris-dim);color:var(--ink)}
+a{color:var(--iris);text-decoration:none}
+:focus-visible{outline:2px solid var(--iris);outline-offset:2px;border-radius:8px}
+
+/* ============================================================
+   Doc layout
+   ============================================================ */
+.wrap{max-width:1180px;margin:0 auto;padding:0 24px}
+section{padding:76px 0}
+.sec-head{display:flex;align-items:baseline;gap:14px;margin-bottom:8px}
+.sec-num{font-family:var(--font-en);font-size:13px;font-weight:600;color:var(--iris);font-variant-numeric:tabular-nums}
+.sec-title{font-size:30px;font-weight:700;letter-spacing:-.02em;line-height:1.2}
+.sec-sub{color:var(--ink-2);font-size:15.5px;max-width:70ch;margin-bottom:34px}
+.rule{height:1px;background:var(--line);margin:0}
+
+/* ---- hero ---- */
+.hero{padding:104px 0 64px;position:relative;overflow:hidden}
+.hero-bg{position:absolute;inset:0;pointer-events:none;
+  background:
+    radial-gradient(680px 380px at 78% 8%, rgba(124,140,255,.15), transparent 62%),
+    radial-gradient(560px 320px at 14% 82%, rgba(127,214,195,.09), transparent 60%);}
+.hero .wrap{position:relative}
+.eyebrow{display:inline-flex;align-items:center;gap:8px;padding:6px 14px;border:1px solid var(--line-2);
+  border-radius:var(--r-full);font-size:12.5px;font-weight:600;color:var(--ink-2);background:var(--surface);margin-bottom:24px}
+.eyebrow .dot{width:6px;height:6px;border-radius:50%;background:var(--mint);box-shadow:0 0 10px var(--mint)}
+h1{font-size:clamp(38px,6vw,62px);font-weight:800;letter-spacing:-.03em;line-height:1.06;max-width:19ch}
+h1 em{font-style:normal;color:var(--iris)}
+.hero p{color:var(--ink-2);font-size:17px;max-width:58ch;margin-top:20px}
+.hero-meta{display:flex;flex-wrap:wrap;gap:28px;margin-top:38px;padding-top:28px;border-top:1px solid var(--line)}
+.hm b{display:block;font-family:var(--font-en);font-size:23px;font-weight:700;letter-spacing:-.02em;color:var(--ink)}
+.hm span{font-size:12.5px;color:var(--ink-3)}
+
+/* ============================================================
+   Tokens
+   ============================================================ */
+.grid{display:grid;gap:16px}
+.g-swatches{grid-template-columns:repeat(auto-fit,minmax(148px,1fr))}
+.sw{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-md);overflow:hidden;transition:transform var(--e-fast),border-color var(--e-fast)}
+.sw:hover{transform:translateY(-2px);border-color:var(--line-2)}
+.sw-chip{height:64px}
+.sw-meta{padding:10px 12px}
+.sw-meta b{display:block;font-size:13px;font-weight:600}
+.sw-meta code{font-family:var(--font-en);font-size:11px;color:var(--ink-3)}
+
+.two{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:24px}
+.panel h4{font-size:15px;font-weight:600;margin-bottom:4px}
+.panel .hint{font-size:13px;color:var(--ink-3);margin-bottom:18px}
+
+/* type specimens */
+.ts-row{display:flex;align-items:baseline;justify-content:space-between;gap:16px;padding:13px 0;border-top:1px solid var(--line)}
+.ts-row:first-of-type{border-top:0}
+.ts-spec{white-space:nowrap}
+.ts-tag{font-family:var(--font-en);font-size:11px;color:var(--ink-3);font-variant-numeric:tabular-nums;text-align:end;flex-shrink:0}
+.fa .ts-spec{font-family:var(--font-fa)}
+.ltr .ts-spec{font-family:var(--font-en)}
+
+/* spacing / radius / shadow specimens */
+.sp-row{display:flex;align-items:center;gap:14px;padding:7px 0}
+.sp-bar{height:12px;border-radius:4px;background:var(--iris);opacity:.85}
+.sp-tag{font-family:var(--font-en);font-size:12px;color:var(--ink-3);font-variant-numeric:tabular-nums;min-width:56px}
+.rad-row{display:flex;gap:12px;flex-wrap:wrap}
+.rad-box{width:84px;height:64px;background:var(--surface-2);border:1px solid var(--line-2);display:grid;place-items:end center;padding-bottom:7px;font-family:var(--font-en);font-size:11px;color:var(--ink-3)}
+.elev-row{display:flex;gap:16px;flex-wrap:wrap}
+.elev-box{width:128px;height:86px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-md);display:grid;place-items:end center;padding-bottom:9px;font-size:11.5px;color:var(--ink-3)}
+
+/* motion specimens */
+.mo-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
+.mo-card{background:var(--surface-2);border:1px solid var(--line);border-radius:var(--r-md);padding:18px}
+.mo-card b{font-family:var(--font-en);font-size:13px;font-weight:600}
+.mo-card code{display:block;font-family:var(--font-en);font-size:11.5px;color:var(--iris);margin:3px 0 12px}
+.mo-demo{height:44px;position:relative;background:var(--bg-1);border:1px solid var(--line);border-radius:var(--r-sm);cursor:pointer;overflow:hidden}
+.mo-pill{position:absolute;top:50%;inset-inline-start:8px;width:26px;height:26px;border-radius:8px;background:var(--iris);transform:translateY(-50%);box-shadow:var(--sh-iris)}
+.mo-demo:hover .mo-pill{inset-inline-start:calc(100% - 34px)}
+.mo-pill.s1{transition:inset-inline-start .5s cubic-bezier(.34,1.56,.64,1)}
+.mo-pill.s2{transition:inset-inline-start .44s cubic-bezier(.22,1,.36,1)}
+.mo-pill.s3{transition:inset-inline-start .6s cubic-bezier(.65,0,.35,1)}
+.mo-pill.s4{transition:inset-inline-start .3s cubic-bezier(.34,1.3,.64,1)}
+.mo-note{font-size:11.5px;color:var(--ink-3);margin-top:9px}
+
+/* ============================================================
+   Components (live)
+   ============================================================ */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;font-family:inherit;font-size:14px;
+  font-weight:600;border-radius:var(--r-md);padding:10px 17px;border:1px solid transparent;cursor:pointer;
+  transition:transform var(--e-fast),background var(--e-fast),box-shadow var(--e-fast),border-color var(--e-fast)}
+.btn:active{transform:translateY(1px) scale(.985)}
+.btn-primary{background:var(--iris);color:#fff;box-shadow:var(--sh-iris)}
+.btn-primary:hover{background:var(--iris-2);transform:translateY(-1px)}
+.btn-glass{background:var(--surface-2);color:var(--ink);border-color:var(--line-2)}
+.btn-glass:hover{background:var(--surface-3);border-color:var(--line-3);transform:translateY(-1px)}
+.btn-ghost{background:transparent;color:var(--ink-2)}
+.btn-ghost:hover{background:var(--surface-2);color:var(--ink)}
+.btn-sm{font-size:13px;padding:7px 13px;border-radius:var(--r-sm)}
+
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:500;padding:4px 10px;
+  border-radius:var(--r-full);background:var(--surface-2);border:1px solid var(--line);color:var(--ink-2)}
+.chip .cd{width:6px;height:6px;border-radius:50%}
+.comp-row{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:14px}
+.comp-lbl{font-size:12px;color:var(--ink-3);min-width:78px}
+
+/* priority dots */
+.pr-urgent{background:var(--rose);box-shadow:0 0 8px var(--rose)}
+.pr-high{background:var(--amber)}
+.pr-normal{background:var(--iris)}
+.pr-low{background:var(--ink-4)}
+
+/* ============================================================
+   APP FRAME — the redesigned Today view (Operate surface)
+   ============================================================ */
+.stage{border-radius:var(--r-2xl);border:1px solid var(--line-2);background:var(--bg-1);overflow:hidden;
+  box-shadow:var(--sh-3);position:relative}
+.stage-bar{display:flex;align-items:center;gap:10px;padding:11px 16px;border-bottom:1px solid var(--line);
+  background:var(--surface);position:sticky;top:0;z-index:30}
+.tl{width:11px;height:11px;border-radius:50%;background:var(--surface-3)}
+.stage-title{font-size:12.5px;color:var(--ink-3);margin-inline-start:8px;font-weight:500}
+.stage-tools{margin-inline-start:auto;display:flex;gap:8px;align-items:center}
+.tool{font-family:inherit;font-size:12px;font-weight:600;color:var(--ink-2);background:var(--surface-2);
+  border:1px solid var(--line-2);border-radius:var(--r-full);padding:5px 12px;cursor:pointer;transition:all var(--e-fast)}
+.tool:hover{color:var(--ink);border-color:var(--line-3)}
+.tool.on{background:var(--iris);color:#fff;border-color:transparent}
+
+.app{position:relative;min-height:640px;display:flex;flex-direction:column}
+/* dimming layer for deep focus */
+.app.focus-on > *:not(.now-strip):not(.stage-bar){opacity:.16;filter:blur(2.5px);pointer-events:none;transition:opacity .5s var(--sp-soft),filter .5s var(--sp-soft)}
+.app > *{transition:opacity .5s var(--sp-soft),filter .5s var(--sp-soft)}
+
+/* --- top bar --- */
+.app-top{display:flex;align-items:center;gap:12px;padding:14px 20px;position:sticky;top:0;z-index:20;
+  background:var(--glass);backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur);border-bottom:1px solid var(--line)}
+.app-date{display:flex;flex-direction:column;min-width:0}
+.app-date b{font-size:15px;font-weight:600;letter-spacing:-.01em}
+.app-date span{font-size:12px;color:var(--ink-3)}
+.app-top-right{margin-inline-start:auto;display:flex;align-items:center;gap:6px}
+.iconbtn{width:34px;height:34px;border-radius:var(--r-sm);display:grid;place-items:center;background:transparent;
+  border:1px solid transparent;color:var(--ink-2);cursor:pointer;transition:all var(--e-fast)}
+.iconbtn:hover{background:var(--surface-2);color:var(--ink);border-color:var(--line)}
+.avatar{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--iris),var(--violet));
+  display:grid;place-items:center;color:#fff;font-size:13px;font-weight:700;cursor:pointer;border:0}
+
+/* --- stat rail --- */
+.stat-rail{display:flex;align-items:stretch;gap:0;padding:0 20px;border-bottom:1px solid var(--line);background:var(--bg-1)}
+.stat{display:flex;align-items:center;gap:11px;padding:14px 20px 14px 0;margin-inline-end:20px;
+  border-inline-end:1px solid var(--line);min-width:0}
+body[dir="rtl"] .stat:last-child{border-inline-end:0}
+body[dir="ltr"] .stat-rail{flex-direction:row-reverse;justify-content:flex-end}
+body[dir="ltr"] .stat{border-inline-end:0;border-inline-start:1px solid var(--line);padding:14px 0 14px 20px;margin:0 0 0 20px}
+.mini-ring{position:relative;width:40px;height:40px;flex-shrink:0}
+.mini-ring svg{transform:rotate(-90deg)}
+.mini-ring .mr-txt{position:absolute;inset:0;display:grid;place-items:center;font-family:var(--font-en);
+  font-size:11px;font-weight:700;font-variant-numeric:tabular-nums}
+.stat-body b{display:block;font-size:16px;font-weight:700;letter-spacing:-.01em;font-variant-numeric:tabular-nums;line-height:1.25}
+body[dir="rtl"] .stat-body b{font-family:var(--font-fa)}
+body[dir="ltr"] .stat-body b{font-family:var(--font-en)}
+.stat-body span{font-size:11.5px;color:var(--ink-3)}
+.stat-flame{color:var(--amber)}
+.energy-pips{display:flex;gap:3px;align-items:flex-end;height:18px}
+.energy-pips i{width:5px;border-radius:2px;background:var(--surface-3);transition:background var(--e-med)}
+.energy-pips i.on{background:var(--mint)}
+
+/* --- NOW strip: the one answer to "what now?" --- */
+.now-strip{display:flex;align-items:center;gap:16px;padding:18px 20px;margin:16px 20px 4px;
+  background:linear-gradient(135deg,rgba(124,140,255,.16),rgba(124,140,255,.05) 60%,transparent);
+  border:1px solid rgba(124,140,255,.3);border-radius:var(--r-lg);position:relative;z-index:40;
+  box-shadow:0 10px 34px -18px rgba(124,140,255,.6)}
+.now-play{width:46px;height:46px;border-radius:50%;background:var(--iris);color:#fff;display:grid;place-items:center;
+  border:0;cursor:pointer;flex-shrink:0;box-shadow:var(--sh-iris);transition:transform var(--e-fast)}
+.now-play:hover{transform:scale(1.06)}
+.now-play:active{transform:scale(.94)}
+.now-body{min-width:0;flex:1}
+.now-body .lbl{color:var(--iris);margin-bottom:1px}
+.now-title{font-size:16.5px;font-weight:650;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.now-meta{display:flex;gap:12px;flex-wrap:wrap;font-size:12.5px;color:var(--ink-2);margin-top:2px}
+.now-actions{display:flex;gap:8px;flex-shrink:0}
+
+/* --- groups + time rail --- */
+.groups{padding:8px 20px 120px;position:relative}
+.grp{margin-top:22px}
+.grp-head{display:flex;align-items:center;gap:10px;padding:0 2px 10px;cursor:pointer;user-select:none}
+.grp-head .gi{color:var(--ink-3);display:grid;place-items:center;transition:transform var(--e-med),color var(--e-fast)}
+.grp.collapsed .grp-head .gi{transform:rotate(-90deg)}
+.grp-head h3{font-size:14.5px;font-weight:650;letter-spacing:-.01em}
+.grp-head .cnt{font-family:var(--font-en);font-size:12px;color:var(--ink-3);font-variant-numeric:tabular-nums;
+  background:var(--surface-2);border:1px solid var(--line);border-radius:var(--r-full);padding:1px 8px}
+.grp-head .add{margin-inline-start:auto;opacity:0;transition:opacity var(--e-fast)}
+.grp-head:hover .add{opacity:1}
+.grp-list{position:relative;border-top:1px solid var(--line)}
+.grp.collapsed .grp-list{display:none}
+/* the time rail */
+.grp-list::before{content:"";position:absolute;inset-inline-start:17px;top:0;bottom:0;width:1px;
+  background:linear-gradient(var(--line-2),var(--line) 60%,transparent)}
+.task{display:flex;align-items:flex-start;gap:13px;padding:13px 4px 13px 0;position:relative;
+  border-bottom:1px solid var(--line);transition:background var(--e-fast)}
+.task:last-child{border-bottom:0}
+body[dir="rtl"] .task{padding:13px 0 13px 4px}
+.task:hover{background:var(--surface);border-radius:var(--r-md);border-bottom-color:transparent}
+/* checkbox */
+.cbx{width:21px;height:21px;border-radius:50%;border:1.8px solid var(--line-3);background:transparent;cursor:pointer;
+  flex-shrink:0;margin-top:1px;display:grid;place-items:center;transition:all var(--e-fast);position:relative;z-index:2}
+.cbx:hover{border-color:var(--iris);transform:scale(1.1)}
+.cbx svg{width:12px;height:12px;stroke:#fff;stroke-width:3;fill:none;stroke-dasharray:20;stroke-dashoffset:20;
+  transition:stroke-dashoffset .3s var(--sp-soft) .05s}
+.task.done .cbx{background:var(--iris);border-color:var(--iris)}
+.task.done .cbx svg{stroke-dashoffset:0}
+.task-body{flex:1;min-width:0}
+.task-title{font-size:14.5px;font-weight:500;letter-spacing:-.005em;transition:color var(--e-med);display:inline}
+.task.done .task-title{color:var(--ink-3);text-decoration:line-through;text-decoration-color:var(--ink-4)}
+.task-meta{display:flex;gap:9px;flex-wrap:wrap;align-items:center;margin-top:5px;font-size:12px;color:var(--ink-3)}
+.task-meta .tm{display:inline-flex;align-items:center;gap:4px;font-variant-numeric:tabular-nums}
+.task-meta .tm.hot{color:var(--amber)}
+.t-prio{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:8px}
+.task-actions{display:flex;gap:2px;opacity:0;transition:opacity var(--e-fast);flex-shrink:0}
+.task:hover .task-actions,.task:focus-within .task-actions{opacity:1}
+.ta{width:29px;height:29px;border-radius:8px;border:0;background:transparent;color:var(--ink-3);cursor:pointer;
+  display:grid;place-items:center;transition:all var(--e-fast)}
+.ta:hover{background:var(--surface-2);color:var(--iris)}
+body[dir="rtl"] .task-actions{margin-inline-end:-2px}
+
+/* now-line on rail (current time) */
+.now-line{display:flex;align-items:center;gap:8px;padding:9px 0;position:relative}
+.now-line .nd{width:9px;height:9px;border-radius:50%;background:var(--iris);box-shadow:0 0 0 4px rgba(124,140,255,.2),0 0 12px var(--iris);margin-inline-start:13px;position:relative;z-index:2;animation:breathe 3s ease-in-out infinite}
+.now-line .nl{flex:1;height:1px;background:linear-gradient(90deg,rgba(124,140,255,.5),transparent)}
+.now-line .nt{font-family:var(--font-en);font-size:11px;font-weight:600;color:var(--iris);font-variant-numeric:tabular-nums}
+@keyframes breathe{0%,100%{box-shadow:0 0 0 4px rgba(124,140,255,.2),0 0 10px var(--iris)}50%{box-shadow:0 0 0 7px rgba(124,140,255,.1),0 0 18px var(--iris)}}
+
+/* --- floating quick add (command bar) --- */
+.qa-dock{position:absolute;bottom:16px;inset-inline:20px;z-index:35}
+.qa-bar{display:flex;align-items:center;gap:11px;background:var(--glass-2);backdrop-filter:var(--blur);
+  -webkit-backdrop-filter:var(--blur);border:1px solid var(--line-2);border-radius:var(--r-lg);
+  padding:12px 16px;box-shadow:var(--sh-3),var(--inner-hl);transition:border-color var(--e-fast),box-shadow var(--e-fast)}
+.qa-bar:focus-within{border-color:rgba(124,140,255,.5);box-shadow:var(--sh-3),0 0 0 3px var(--iris-dim)}
+.qa-bar .qi{color:var(--ink-3);flex-shrink:0}
+.qa-input{flex:1;background:transparent;border:0;outline:0;color:var(--ink);font-family:inherit;font-size:14.5px;min-width:0}
+.qa-input::placeholder{color:var(--ink-4)}
+.qa-chips{display:flex;gap:6px;flex-shrink:0}
+.qa-chip{font-size:11.5px;font-weight:600;padding:3px 9px;border-radius:var(--r-full);
+  animation:chipIn .35s var(--sp-snappy)}
+@keyframes chipIn{from{opacity:0;transform:translateY(5px) scale(.85)}to{opacity:1;transform:none}}
+.qa-kbd{font-family:var(--font-en);font-size:10.5px;color:var(--ink-3);border:1px solid var(--line-2);
+  border-radius:5px;padding:2px 6px;flex-shrink:0}
+.qa-hint{display:flex;justify-content:space-between;align-items:center;padding:7px 6px 0;font-size:11.5px;color:var(--ink-4)}
+.qa-parse{display:flex;gap:6px;flex-wrap:wrap}
+
+/* toast / streak celebration */
+.toast{position:absolute;bottom:88px;inset-inline:20px;margin-inline:auto;width:fit-content;z-index:50;
+  background:var(--surface-3);border:1px solid var(--line-2);border-radius:var(--r-full);padding:9px 18px;
+  font-size:13px;font-weight:600;display:flex;align-items:center;gap:9px;box-shadow:var(--sh-2);
+  animation:toastIn .5s var(--sp-snappy);opacity:0;pointer-events:none;transition:opacity .4s,transform .4s}
+.toast.show{opacity:1;transform:translateY(0)}
+.toast .fl{color:var(--amber)}
+@keyframes toastIn{from{opacity:0;transform:translateY(14px) scale(.94)}to{opacity:1;transform:none}}
+
+/* ============================================================
+   Callout notes on the Today view
+   ============================================================ */
+.annot{display:grid;grid-template-columns:auto 1fr;gap:14px;padding:16px 0;border-top:1px solid var(--line)}
+.annot .n{width:26px;height:26px;border-radius:50%;background:var(--iris-dim);color:var(--iris);
+  display:grid;place-items:center;font-family:var(--font-en);font-size:12.5px;font-weight:700;flex-shrink:0}
+.annot b{font-size:14.5px;font-weight:650;display:block;margin-bottom:3px}
+.annot p{font-size:13.5px;color:var(--ink-2)}
+
+/* ============================================================
+   Other screens (mockups)
+   ============================================================ */
+.screens{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+.scr{background:var(--bg-1);border:1px solid var(--line-2);border-radius:var(--r-xl);overflow:hidden;box-shadow:var(--sh-2)}
+.scr-cap{padding:14px 18px;border-top:1px solid var(--line);background:var(--surface)}
+.scr-cap b{font-size:14px;font-weight:650;display:block}
+.scr-cap span{font-size:12.5px;color:var(--ink-3)}
+.scr-in{padding:18px;min-height:330px}
+.scr-top{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+.scr-top h4{font-size:16px;font-weight:650;letter-spacing:-.01em}
+
+/* inspector */
+.insp-row{display:flex;align-items:center;gap:11px;padding:10px 0;border-top:1px solid var(--line);font-size:13.5px}
+.insp-row .k{color:var(--ink-3);min-width:82px;font-size:12.5px}
+.insp-sub{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-sm);padding:9px 12px;
+  font-size:13px;display:flex;align-items:center;gap:9px;margin-top:8px}
+.chk-sm{width:16px;height:16px;border-radius:50%;border:1.6px solid var(--line-3);flex-shrink:0}
+.chk-sm.on{background:var(--iris);border-color:var(--iris)}
+
+/* habits */
+.heat{display:grid;grid-template-columns:repeat(14,1fr);gap:4px;margin-top:6px}
+.heat i{aspect-ratio:1;border-radius:3px;background:var(--surface-2)}
+.heat i.l1{background:rgba(124,140,255,.3)} .heat i.l2{background:rgba(124,140,255,.55)}
+.heat i.l3{background:rgba(124,140,255,.8)} .heat i.l4{background:var(--iris)}
+.habit{display:flex;align-items:center;gap:12px;padding:12px 0;border-top:1px solid var(--line)}
+.habit .hi{width:36px;height:36px;border-radius:var(--r-sm);background:var(--surface-2);display:grid;place-items:center;font-size:17px;flex-shrink:0}
+.habit b{font-size:14px;font-weight:600;display:block}
+.habit span{font-size:12px;color:var(--ink-3)}
+
+/* focus timer */
+.focus-scr{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:330px;gap:20px;
+  background:radial-gradient(400px 240px at 50% 34%,rgba(124,140,255,.13),transparent 66%)}
+.big-ring{position:relative;width:186px;height:186px}
+.big-ring svg{transform:rotate(-90deg)}
+.big-ring .br-txt{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.big-ring .br-time{font-family:var(--font-en);font-size:40px;font-weight:600;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+.big-ring .br-lbl{font-size:12px;color:var(--ink-3);margin-top:2px}
+.focus-modes{display:flex;gap:6px;background:var(--surface);border:1px solid var(--line);padding:4px;border-radius:var(--r-full)}
+.fm{font-size:12.5px;font-weight:600;padding:6px 15px;border-radius:var(--r-full);border:0;background:transparent;color:var(--ink-3);cursor:pointer;font-family:inherit;transition:all var(--e-fast)}
+.fm.on{background:var(--iris);color:#fff}
+
+/* analytics */
+.an-kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}
+.an-kpi{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-md);padding:12px}
+.an-kpi b{font-family:var(--font-en);font-size:20px;font-weight:700;letter-spacing:-.02em;display:block;font-variant-numeric:tabular-nums}
+.an-kpi span{font-size:11px;color:var(--ink-3)}
+.spark{display:flex;align-items:flex-end;gap:5px;height:92px;padding:10px 2px 0}
+.spark i{flex:1;border-radius:4px 4px 2px 2px;background:linear-gradient(var(--iris),rgba(124,140,255,.25));
+  transition:height .6s var(--sp-soft);min-height:4px}
+.spark i.pk{background:linear-gradient(var(--mint),rgba(127,214,195,.25))}
+.an-x{display:flex;gap:5px;padding-top:6px}
+.an-x span{flex:1;text-align:center;font-size:10px;color:var(--ink-4)}
+
+/* settings */
+.set-grp{margin-bottom:16px}
+.set-grp>.lbl{margin-bottom:8px;display:block}
+.set{display:flex;align-items:center;gap:11px;padding:11px 13px;background:var(--surface);border:1px solid var(--line);
+  border-radius:var(--r-md);margin-bottom:6px;font-size:13.5px}
+.set b{font-weight:500}
+.set .sub{font-size:11.5px;color:var(--ink-3)}
+.set-r{margin-inline-start:auto;display:flex;align-items:center;gap:8px}
+.tgl{width:38px;height:22px;border-radius:var(--r-full);background:var(--surface-3);position:relative;cursor:pointer;
+  border:1px solid var(--line-2);transition:background var(--e-med);flex-shrink:0}
+.tgl::after{content:"";position:absolute;top:2px;inset-inline-start:2px;width:16px;height:16px;border-radius:50%;
+  background:var(--ink-2);transition:transform var(--e-med),background var(--e-med)}
+.tgl.on{background:var(--iris);border-color:transparent}
+.tgl.on::after{transform:translateX(-16px);background:#fff}
+body[dir="ltr"] .tgl.on::after{transform:translateX(16px)}
+.seg{display:flex;background:var(--surface-2);border:1px solid var(--line);border-radius:var(--r-sm);padding:3px;gap:2px}
+.seg button{font-family:inherit;font-size:12px;font-weight:600;padding:4px 11px;border-radius:7px;border:0;
+  background:transparent;color:var(--ink-3);cursor:pointer;transition:all var(--e-fast)}
+.seg button.on{background:var(--surface);color:var(--ink);box-shadow:var(--sh-1)}
+
+/* onboarding */
+.ob{display:flex;flex-direction:column;align-items:center;text-align:center;gap:16px;min-height:330px;justify-content:center;padding:10px}
+.ob-logo{width:74px;height:74px;border-radius:24px;background:linear-gradient(135deg,var(--iris),var(--violet));
+  display:grid;place-items:center;color:#fff;box-shadow:var(--sh-iris)}
+.ob h4{font-size:21px;font-weight:700;letter-spacing:-.02em}
+.ob p{font-size:13.5px;color:var(--ink-2);max-width:34ch}
+.ob-dots{display:flex;gap:6px}
+.ob-dots i{width:6px;height:6px;border-radius:50%;background:var(--surface-3)}
+.ob-dots i.on{width:20px;border-radius:3px;background:var(--iris)}
+
+/* ============================================================
+   Principles / motion rules / roadmap
+   ============================================================ */
+.rules{display:grid;grid-template-columns:repeat(auto-fit,minmax(268px,1fr));gap:14px}
+.rule-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:20px}
+.rule-card .rn{font-family:var(--font-en);font-size:11.5px;font-weight:700;color:var(--iris);margin-bottom:9px}
+.rule-card b{font-size:14.5px;font-weight:650;display:block;margin-bottom:5px}
+.rule-card p{font-size:13px;color:var(--ink-2)}
+.rule-card code{font-family:var(--font-en);font-size:11.5px;background:var(--surface-2);border:1px solid var(--line);
+  border-radius:5px;padding:1.5px 6px;color:var(--iris)}
+
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th{text-align:start;font-size:11.5px;font-weight:600;color:var(--ink-3);letter-spacing:.06em;text-transform:uppercase;
+  padding:10px 12px;border-bottom:1px solid var(--line-2)}
+td{padding:12px;border-bottom:1px solid var(--line);vertical-align:top}
+td code{font-family:var(--font-en);font-size:12px;color:var(--iris)}
+tr:hover td{background:var(--surface)}
+
+.road{display:flex;flex-direction:column;gap:0}
+.rd{display:grid;grid-template-columns:96px 1fr;gap:20px;padding:22px 0;border-top:1px solid var(--line);position:relative}
+.rd-phase{font-family:var(--font-en);font-size:12px;font-weight:700;color:#fff;background:var(--iris);
+  border-radius:var(--r-full);padding:4px 12px;height:fit-content;text-align:center;box-shadow:var(--sh-iris)}
+.rd-phase.p2{background:var(--violet);box-shadow:0 6px 24px -10px rgba(180,154,255,.55)}
+.rd-phase.p3{background:var(--mint);color:#06281f;box-shadow:0 6px 24px -10px rgba(127,214,195,.5)}
+.rd-phase.p4{background:var(--surface-3);color:var(--ink-2);box-shadow:none;border:1px solid var(--line-2)}
+.rd b{font-size:16px;font-weight:650;letter-spacing:-.01em;display:block;margin-bottom:5px}
+.rd p{font-size:13.5px;color:var(--ink-2);max-width:72ch}
+.rd .wow{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:600;color:var(--amber);
+  background:var(--amber-dim);border-radius:var(--r-full);padding:3px 10px;margin-top:9px}
+
+footer{padding:56px 0 80px;border-top:1px solid var(--line);color:var(--ink-3);font-size:13px;text-align:center}
+
+@media (max-width:900px){
+  .two,.screens{grid-template-columns:1fr}
+  .stat-rail{flex-wrap:wrap}
+  .stat{border-inline-end:0;padding-inline-end:0;margin-inline-end:0;min-width:46%}
+  .now-strip{flex-wrap:wrap}
+  .now-actions{width:100%}
+  .now-actions .btn{flex:1}
+  .rd{grid-template-columns:1fr;gap:10px}
+  .rd-phase{width:fit-content}
+  section{padding:56px 0}
+  .qa-dock{position:static;inset:auto;margin:0 20px 20px}
+  .app{padding-bottom:0}
+}
+@media (prefers-reduced-motion:reduce){
+  *{animation-duration:.001s!important;transition-duration:.001s!important}
+}
+</style>
+</head>
+<body dir="rtl" lang="fa">
+
+<!-- ==================== HERO ==================== -->
+<div class="hero">
+  <div class="hero-bg"></div>
+  <div class="wrap">
+    <span class="eyebrow"><span class="dot"></span> Mz Planer — بازطراحی محصول · نسخه ۲</span>
+    <h1>آرام‌تر. سریع‌تر. <em>باوقارتر.</em></h1>
+    <p>یک سیستم طراحی و بازطراحی کامل برای Mz Planer — با محوریت تجربه‌ی فارسی/انگلیسی، حرکات فنری واقعی، و پاسخِ «الان چهکار کنم؟» در نخستین نگاه. این سند هم مرجع طراحی است و هم نمونه‌ی زنده‌ی «امروز».</p>
+    <div class="hero-meta">
+      <div class="hm"><b>۲</b><span>حالت فارسی / انگلیسی، راست‌به‌چپ بی‌نقص</span></div>
+      <div class="hm"><b>&lt;۱۰۰ms</b><span>هدف تعامل؛ همه‌چیز optimistic</span></div>
+      <div class="hm"><b>۴</b><span>فاز نقشه‌راه تا محصول پرداخت‌شدنی</span></div>
+      <div class="hm"><b>$۱۵</b><span>ارزش پیشنهادی ماهانه</span></div>
+    </div>
+  </div>
+</div>
+<div class="rule"></div>
+
+<!-- ==================== 01 DESIGN SYSTEM ==================== -->
+<section id="system">
+  <div class="wrap">
+    <div class="sec-head"><span class="sec-num">۰۱</span><h2 class="sec-title">سیستم طراحی</h2></div>
+    <p class="sec-sub">تاریک‌اول، با کنتراست نرم و شیشه‌کاریِ سنجیده — شیشه فقط برای سطح‌های واقعاً بالا (نوار بالا، کامندبار، ورق‌ها) است؛ فهرست‌ها روی بوم می‌نشینند با خط مویی. یک رنگ اصلی (iris) + پاستل‌های بی‌صدا برای وضعیت.</p>
+
+    <h4 class="lbl" style="margin-bottom:14px">رنگ — تاریک (پیش‌فرض)</h4>
+    <div class="grid g-swatches">
+      <div class="sw"><div class="sw-chip" style="background:#0A0D13"></div><div class="sw-meta"><b>عمق بوم</b><code>--bg #0A0D13</code></div></div>
+      <div class="sw"><div class="sw-chip" style="background:#131824"></div><div class="sw-meta"><b>سطح</b><code>--surface #131824</code></div></div>
+      <div class="sw"><div class="sw-chip" style="background:#212839"></div><div class="sw-meta"><b>سطح فعال</b><code>--surface-3 #212839</code></div></div>
+      <div class="sw"><div class="sw-chip" style="background:#EEF1F8"></div><div class="sw-meta"><b>مرکب</b><code>--ink #EEF1F8</code></div></div>
+      <div class="sw"><div class="sw-chip" style="background:#A3ACC4"></div><div class="sw-meta"><b>مرکب ۲</b><code>--ink-2 #A3ACC4</code></div></div>
+      <div class="sw"><div class="sw-chip" style="background:#7C8CFF"></div><div class="sw-meta"><b>iris — اصلی</b><code>--iris #7C8CFF</code></div></div>
+      <div class="sw"><div class="sw-chip" style="background:#7FD6C3"></div><div class="sw-meta"><b>نعنایی — انرژی/موفقیت</b><code>--mint #7FD6C3</code></div></div>
+      <div class="sw"><div class="sw-chip" style="background:#E8B871"></div><div class="sw-meta"><b>کهربایی — شعله/اهمیت</b><code>--amber #E8B871</code></div></div>
+      <div class="sw"><div class="sw-chip" style="background:#B49AFF"></div><div class="sw-meta"><b>بنفش — برچسب</b><code>--violet #B49AFF</code></div></div>
+      <div class="sw"><div class="sw-chip" style="background:#FF8A94"></div><div class="sw-meta"><b>رز — فوری/خطر</b><code>--rose #FF8A94</code></div></div>
+    </div>
+    <p class="sec-sub" style="margin-top:18px;margin-bottom:0">حالت روشن با یک کلید <code style="font-family:var(--font-en);color:var(--iris)">data-mode="light"</code> روی <code style="font-family:var(--font-en);color:var(--iris)">&lt;html&gt;</code> — همان توکن‌ها، بوم کاغذی #F6F6F3، iris تیره‌تر برای کنتراست. دکمه‌ی «روشن/تاریک» بالای نمونه‌ی زنده کار می‌کند.</p>
+  </div>
+</section>
+<div class="rule"></div>
+
+<section>
+  <div class="wrap">
+    <h4 class="lbl" style="margin-bottom:14px">تایپوگرافی — وزیرمتن (فا) + گیست (ان)</h4>
+    <div class="two">
+      <div class="panel">
+        <h4>مقیاس فارسی</h4>
+        <p class="hint">وزیرمتن متغیر. بدون letter-spacing در RTL — حروف چسبان فارسی را خراب می‌کند. اولویت با وزن و اندازه.</p>
+        <div class="ts-row"><span class="ts-spec" style="font-size:34px;font-weight:800;letter-spacing:-.03em">امروز</span><span class="ts-tag">display 34/1.1 · 800</span></div>
+        <div class="ts-row"><span class="ts-spec" style="font-size:23px;font-weight:700;letter-spacing:-.02em">جلسه تیم محصول</span><span class="ts-tag">h1 23/1.2 · 700</span></div>
+        <div class="ts-row"><span class="ts-spec" style="font-size:16.5px;font-weight:650">بازبینی گزارش ماهانه</span><span class="ts-tag">h2 16.5 · 650</span></div>
+        <div class="ts-row"><span class="ts-spec" style="font-size:14.5px;font-weight:500">عنوان وظیفه در سطر فهرست</span><span class="ts-tag">task 14.5 · 500</span></div>
+        <div class="ts-row"><span class="ts-spec" style="font-size:13px;color:var(--ink-2)">متن کمکی و توضیحات</span><span class="ts-tag">body 13 · 400</span></div>
+        <div class="ts-row"><span class="ts-spec" style="font-size:11.5px;color:var(--ink-3)">برچسب دسته</span><span class="ts-tag">meta 11.5 · 400</span></div>
+      </div>
+      <div class="panel ltr">
+        <h4>English scale — Geist</h4>
+        <p class="hint">Tabular numerals everywhere numbers change (timer, counts, dates) so digits never jitter.</p>
+        <div class="ts-row"><span class="ts-spec" style="font-family:var(--font-en);font-size:34px;font-weight:700;letter-spacing:-.03em">Today</span><span class="ts-tag">display 34 · 700</span></div>
+        <div class="ts-row"><span class="ts-spec" style="font-family:var(--font-en);font-size:23px;font-weight:600;letter-spacing:-.02em">Product team sync</span><span class="ts-tag">h1 23 · 600</span></div>
+        <div class="ts-row"><span class="ts-spec" style="font-family:var(--font-en);font-size:16.5px;font-weight:600">Review monthly report</span><span class="ts-tag">h2 16.5 · 600</span></div>
+        <div class="ts-row"><span class="ts-spec" style="font-family:var(--font-en);font-size:14.5px;font-weight:500">Task title in list row</span><span class="ts-tag">task 14.5 · 500</span></div>
+        <div class="ts-row"><span class="ts-spec" style="font-family:var(--font-en);font-size:13px;color:var(--ink-2)">Helper text and descriptions</span><span class="ts-tag">body 13 · 400</span></div>
+        <div class="ts-row"><span class="ts-spec" style="font-family:var(--font-en);font-size:11.5px;color:var(--ink-3)">GROUP LABEL</span><span class="ts-tag">meta 11.5 · 400</span></div>
+      </div>
+    </div>
+
+    <div class="two" style="margin-top:20px">
+      <div class="panel">
+        <h4>فاصله — پایه ۴px</h4>
+        <p class="hint">مقیاس: ۴، ۸، ۱۲، ۱۶، ۲۰، ۲۴، ۳۲، ۴۰، ۵۶، ۷۲. داخل لیست‌ها فقط ۱۲/۱۶/۲۰.</p>
+        <div class="sp-row"><span class="sp-tag">4</span><span class="sp-bar" style="width:4px"></span></div>
+        <div class="sp-row"><span class="sp-tag">8</span><span class="sp-bar" style="width:8px"></span></div>
+        <div class="sp-row"><span class="sp-tag">12</span><span class="sp-bar" style="width:12px"></span></div>
+        <div class="sp-row"><span class="sp-tag">16</span><span class="sp-bar" style="width:16px"></span></div>
+        <div class="sp-row"><span class="sp-tag">24</span><span class="sp-bar" style="width:24px"></span></div>
+        <div class="sp-row"><span class="sp-tag">40</span><span class="sp-bar" style="width:40px"></span></div>
+      </div>
+      <div class="panel">
+        <h4>گردی + سایه (۴ سطح ارتفاع)</h4>
+        <p class="hint">گوشه: ۱۰ / ۱۴ / ۲۰ / ۲۸ / ۳۶. شیشه فقط سطح ۳ — بقیه با سایه.</p>
+        <div class="rad-row" style="margin-bottom:18px">
+          <div class="rad-box" style="border-radius:10px">10</div>
+          <div class="rad-box" style="border-radius:14px">14</div>
+          <div class="rad-box" style="border-radius:20px">20</div>
+          <div class="rad-box" style="border-radius:28px">28</div>
+        </div>
+        <div class="elev-row">
+          <div class="elev-box" style="box-shadow:none">flat</div>
+          <div class="elev-box" style="box-shadow:var(--sh-1)">elev 1</div>
+          <div class="elev-box" style="box-shadow:var(--sh-2)">elev 2</div>
+          <div class="elev-box" style="box-shadow:var(--sh-3)">elev 3</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+<div class="rule"></div>
+
+<section>
+  <div class="wrap">
+    <h4 class="lbl" style="margin-bottom:14px">حرکت — فنر، هرگز خطی</h4>
+    <p class="sec-sub">چهار فنر مشخص. کامپوننت‌ها مقدار فنر را از مرکز می‌خوانند، نه اینکه خودشان بسازند. روی هر کارت زیر ماوس بزنید تا حسش را ببینید.</p>
+    <div class="mo-grid">
+      <div class="mo-card"><b>Snappy</b><code>stiffness 520 · damping 36</code>
+        <div class="mo-demo"><span class="mo-pill s1"></span></div>
+        <p class="mo-note">چک‌باکس، چیپ، کلید کوچک — پاسخ فوری، جهش کوتاه.</p></div>
+      <div class="mo-card"><b>Soft</b><code>stiffness 380 · damping 34</code>
+        <div class="mo-demo"><span class="mo-pill s2"></span></div>
+        <p class="mo-note">کارت، فهرست، تغییر وضعیت کلی — پیش‌فرض محصول.</p></div>
+      <div class="mo-card"><b>Gentle</b><code>stiffness 260 · damping 30</code>
+        <div class="mo-demo"><span class="mo-pill s3"></span></div>
+        <p class="mo-note">ورق‌ها، بازرس، سطح‌های بزرگ — سنگین و آرام.</p></div>
+      <div class="mo-card"><b>Micro</b><code>stiffness 700 · damping 42</code>
+        <div class="mo-demo"><span class="mo-pill s4"></span></div>
+        <p class="mo-note">هاور، فشردن، تعویض — زیر ۱۸۰ms، فقط transform/opacity.</p></div>
+    </div>
+    <div class="rules" style="margin-top:22px">
+      <div class="rule-card"><div class="rn">RULE 01</div><b>فقط transform و opacity</b><p>انیمیت هرگز width/height/top/left نشود — در موبایل می‌پرد. لیست با <code>layout</code> جابه‌جا می‌شود.</p></div>
+      <div class="rule-card"><div class="rn">RULE 02</div><b>اتمام کار = یک حرکت پیوسته</b><p>چک کشیده می‌شود، عنوان می‌نشیند، سطر به پایین جمع می‌شود — سه اتفاق هم‌زمان با یک فنر، نه سه انیمیشن متوالی.</p></div>
+      <div class="rule-card"><div class="rn">RULE 03</div><b>محیطی = بی‌صدا</b><p>هر حرکت تزئینی (نوار نوری حلقه، نفس نقطه‌ی «الان») روی <code>data-ambient</code> است و با مخفی شدن تب pause می‌شود.</p></div>
+      <div class="rule-card"><div class="rn">RULE 04</div><b>کاهش حرکت مطلق است</b><p><code>prefers-reduced-motion</code> و سوییچ داخلی، همه‌چیز را به ۰.۰۰۱s می‌رساند — بدون استثنا، بدون ناپدید شدن محتوا.</p></div>
+      <div class="rule-card"><div class="rn">RULE 05</div><b>ورودی گم نمی‌شود</b><p>تایپ سریع در کامندبار هیچ کاراکتری را از دست نمی‌دهد؛ parse در حاشیه است و UI هرگز منتظر پاسخ parse نمی‌ماند.</p></div>
+      <div class="rule-card"><div class="rn">RULE 06</div><b>شمارنده‌ها tabular</b><p>تایمر، درصد، تاریخ — <code>font-variant-numeric: tabular-nums</code> تا رقم‌ها نلرزند وقتی تیک می‌خورند.</p></div>
+    </div>
+  </div>
+</section>
+<div class="rule"></div>
+
+<!-- ==================== 02 TODAY VIEW ==================== -->
+<section id="today">
+  <div class="wrap">
+    <div class="sec-head"><span class="sec-num">۰۲</span><h2 class="sec-title">نمای «امروز» — بازطراحی‌شده</h2></div>
+    <p class="sec-sub">سطح <b style="color:var(--ink)">Operate</b> است، نه داشبورد: کاربر می‌آید کار کند، نه تماشا. پس قهرمانِ صفحه حلقه‌ی بزرگ نیست — <b style="color:var(--ink)">نوار «الان»</b> است که یک جمله جواب می‌دهد: «الان چه چیزی را شروع کنم؟». زیرش، ریلِ زمان با گروه‌های صبح/عصر/شب، و پایین، کامندبار شناور. در نمونه‌ی زنده زیر واقعاً کار می‌کند: تسک‌ها را چک کنید، زبان را عوض کنید، تایپ کنید و parse فارسی را ببینید، و «عمیق» را بزنید.</p>
+
+    <div class="stage" id="stage">
+      <div class="stage-bar">
+        <span class="tl"></span><span class="tl"></span><span class="tl"></span>
+        <span class="stage-title">Mz Planer — نمای امروز (زنده)</span>
+        <div class="stage-tools">
+          <button class="tool" id="btn-lang">فارسی / English</button>
+          <button class="tool" id="btn-mode">روشن</button>
+          <button class="tool" id="btn-focus">عمیق</button>
+        </div>
+      </div>
+
+      <div class="app" id="app">
+        <!-- top bar -->
+        <div class="app-top">
+          <div class="app-date">
+            <b data-fa="شنبه ۱۴ مهر" data-en="Sat, Oct 5">شنبه ۱۴ مهر</b>
+            <span data-fa="مهر ۱۴۰۴ · جمعه ۲۶ سپتامبر" data-en="October 2025 · مهر ۱۴۰۴">مهر ۱۴۰۴ · جمعه ۲۶ سپتامبر</span>
+          </div>
+          <div class="app-top-right">
+            <button class="iconbtn" data-fa-title="جست‌وجو" data-en-title="Search"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg></button>
+            <button class="iconbtn" data-fa-title="اعلان‌ها" data-en-title="Notifications"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg></button>
+            <button class="avatar">م</button>
+          </div>
+        </div>
+
+        <!-- stat rail -->
+        <div class="stat-rail">
+          <div class="stat">
+            <div class="mini-ring">
+              <svg width="40" height="40" viewBox="0 0 40 40">
+                <circle cx="20" cy="20" r="16" fill="none" stroke="var(--line-2)" stroke-width="3.5"/>
+                <circle id="railRing" cx="20" cy="20" r="16" fill="none" stroke="var(--iris)" stroke-width="3.5" stroke-linecap="round" stroke-dasharray="100.5" stroke-dashoffset="37.7"/>
+              </svg>
+              <span class="mr-txt" id="railPct">۶۲٪</span>
+            </div>
+            <div class="stat-body"><b id="railDone">۳ از ۵</b><span data-fa="کامل شد" data-en="completed">کامل شد</span></div>
+          </div>
+          <div class="stat">
+            <svg class="stat-flame" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2s4 4 4 8a4 4 0 0 1-8 0c0-1 .5-2 .5-2S6 11 6 14a6 6 0 0 0 12 0c0-5-6-12-6-12z"/></svg>
+            <div class="stat-body"><b data-fa="۱۲ روز" data-en="12 days">۱۲ روز</b><span data-fa="پیوستگی عادت" data-en="habit streak">پیوستگی عادت</span></div>
+          </div>
+          <div class="stat">
+            <div class="energy-pips" id="energyPips"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i></div>
+            <div class="stat-body"><b data-fa="انرژی بالا" data-en="High energy">انرژی بالا</b><span data-fa="برای کار سخت مناسب" data-en="good for deep work">برای کار سخت مناسب</span></div>
+          </div>
+          <div class="stat">
+            <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="var(--iris)" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+            <div class="stat-body"><b data-fa="۲س ۴۵د" data-en="2h 45m">۲س ۴۵د</b><span data-fa="تمرکز امروز" data-en="focus today">تمرکز امروز</span></div>
+          </div>
+        </div>
+
+        <!-- NOW strip -->
+        <div class="now-strip" id="nowStrip">
+          <button class="now-play" id="nowPlay" aria-label="شروع تمرکز">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+          </button>
+          <div class="now-body">
+            <span class="lbl" data-fa="الان" data-en="NOW">الان</span>
+            <div class="now-title" data-fa="جلسه تیم محصول" data-en="Product team sync">جلسه تیم محصول</div>
+            <div class="now-meta">
+              <span class="tm" data-fa="۱۰:۳۰ صبح" data-en="10:30 AM">۱۰:۳۰ صبح</span>
+              <span data-fa="پروژه: Mz Planer" data-en="Project: Mz Planer">پروژه: Mz Planer</span>
+              <span data-fa="۲ زیرمجموعه" data-en="2 subtasks">۲ زیرمجموعه</span>
+            </div>
+          </div>
+          <div class="now-actions">
+            <button class="btn btn-primary btn-sm" data-fa="شروع تمرکز" data-en="Start focus">شروع تمرکز</button>
+            <button class="btn btn-ghost btn-sm" data-fa="بعداً" data-en="Later">بعداً</button>
+          </div>
+        </div>
+
+        <!-- groups + rail -->
+        <div class="groups" id="groups">
+          <!-- MORNING -->
+          <div class="grp">
+            <div class="grp-head" onclick="toggleGrp(this)">
+              <span class="gi"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="m6 9 6 6 6-6"/></svg></span>
+              <h3 data-fa="صبح" data-en="Morning">صبح</h3><span class="cnt" data-fa="۲/۳" data-en="2/3">۲/۳</span>
+              <button class="btn btn-ghost btn-sm add" data-fa="+ افزودن" data-en="+ Add">+ افزودن</button>
+            </div>
+            <div class="grp-list" id="list-morning">
+              <div class="task done">
+                <button class="cbx" onclick="toggleTask(this)" aria-label="کامل شد"><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg></button>
+                <div class="task-body"><span class="task-title" data-fa="آماده‌سازی ارائه" data-en="Prepare deck">آماده‌سازی ارائه</span>
+                  <div class="task-meta"><span class="tm" data-fa="۸:۰۰ صبح" data-en="8:00 AM">۸:۰۰ صبح</span><span data-fa="برنامه‌ریزی" data-en="Planning">برنامه‌ریزی</span></div></div>
+                <span class="t-prio pr-normal"></span>
+              </div>
+              <div class="task">
+                <button class="cbx" onclick="toggleTask(this)" aria-label="کامل شد"><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg></button>
+                <div class="task-body"><span class="task-title" data-fa="مرور ایمیل‌های شب" data-en="Clear overnight inbox">مرور ایمیل‌های شب</span>
+                  <div class="task-meta"><span class="tm" data-fa="۹:۰۰ صبح" data-en="9:00 AM">۹:۰۰ صبح</span><span data-fa="کاری" data-en="Work">کاری</span></div></div>
+                <span class="t-prio pr-low"></span>
+                <div class="task-actions"><button class="ta" title="شروع تمرکز"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></button><button class="ta" title="ویرایش"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></button></div>
+              </div>
+              <div class="now-line"><span class="nd"></span><span class="nt">۱۰:۱۲</span><span class="nl"></span></div>
+              <div class="task">
+                <button class="cbx" onclick="toggleTask(this)" aria-label="کامل شد"><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg></button>
+                <div class="task-body"><span class="task-title" data-fa="جلسه تیم محصول" data-en="Product team sync">جلسه تیم محصول</span>
+                  <div class="task-meta"><span class="tm hot" data-fa="۱۰:۳۰ صبح · ۱۸ دقیقه دیگر" data-en="10:30 AM · in 18 min">۱۰:۳۰ صبح · ۱۸ دقیقه دیگر</span><span data-fa="پروژه: Mz Planer" data-en="Project: Mz Planer">پروژه: Mz Planer</span></div></div>
+                <span class="t-prio pr-high"></span>
+                <div class="task-actions"><button class="ta" title="شروع تمرکز"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></button><button class="ta" title="ویرایش"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></button></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- AFTERNOON -->
+          <div class="grp">
+            <div class="grp-head" onclick="toggleGrp(this)">
+              <span class="gi"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="m6 9 6 6 6-6"/></svg></span>
+              <h3 data-fa="عصر" data-en="Afternoon">عصر</h3><span class="cnt" data-fa="۰/۲" data-en="0/2">۰/۲</span>
+              <button class="btn btn-ghost btn-sm add" data-fa="+ افزودن" data-en="+ Add">+ افزودن</button>
+            </div>
+            <div class="grp-list" id="list-afternoon">
+              <div class="task">
+                <button class="cbx" onclick="toggleTask(this)" aria-label="کامل شد"><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg></button>
+                <div class="task-body"><span class="task-title" data-fa="بازبینی گزارش ماهانه" data-en="Review monthly report">بازبینی گزارش ماهانه</span>
+                  <div class="task-meta"><span class="tm" data-fa="۱۴:۰۰" data-en="2:00 PM">۱۴:۰۰</span><span data-fa="۴۵ دقیقه تخمین" data-en="45 min est">۴۵ دقیقه تخمین</span></div></div>
+                <span class="t-prio pr-high"></span>
+                <div class="task-actions"><button class="ta" title="شروع تمرکز"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></button><button class="ta" title="ویرایش"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></button></div>
+              </div>
+              <div class="task">
+                <button class="cbx" onclick="toggleTask(this)" aria-label="کامل شد"><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg></button>
+                <div class="task-body"><span class="task-title" data-fa="تماس با علی درباره قرارداد" data-en="Call Ali about contract">تماس با علی درباره قرارداد</span>
+                  <div class="task-meta"><span class="tm" data-fa="۱۶:۳۰" data-en="4:30 PM">۱۶:۳۰</span><span data-fa="یادآوری ۱۵ دقیقه قبل" data-en="remind 15 min before">یادآوری ۱۵ دقیقه قبل</span></div></div>
+                <span class="t-prio pr-normal"></span>
+                <div class="task-actions"><button class="ta" title="شروع تمرکز"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></button><button class="ta" title="ویرایش"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></button></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- EVENING -->
+          <div class="grp collapsed">
+            <div class="grp-head" onclick="toggleGrp(this)">
+              <span class="gi"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="m6 9 6 6 6-6"/></svg></span>
+              <h3 data-fa="شب" data-en="Evening">شب</h3><span class="cnt" data-fa="۰/۱" data-en="0/1">۰/۱</span>
+              <button class="btn btn-ghost btn-sm add" data-fa="+ افزودن" data-en="+ Add">+ افزودن</button>
+            </div>
+            <div class="grp-list" id="list-evening">
+              <div class="task">
+                <button class="cbx" onclick="toggleTask(this)" aria-label="کامل شد"><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg></button>
+                <div class="task-body"><span class="task-title" data-fa="مرور روز + برنامه فردا" data-en="Daily review + plan tomorrow">مرور روز + برنامه فردا</span>
+                  <div class="task-meta"><span class="tm" data-fa="۲۱:۰۰" data-en="9:00 PM">۲۱:۰۰</span><span data-fa="عادت روزانه" data-en="daily habit">عادت روزانه</span></div></div>
+                <span class="t-prio pr-normal"></span>
+                <div class="task-actions"><button class="ta" title="شروع تمرکز"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></button><button class="ta" title="ویرایش"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></button></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- toast -->
+        <div class="toast" id="toast"><span class="fl">🔥</span><span id="toastTxt">آفرین — ۱۲ روز پیوسته</span></div>
+
+        <!-- floating command bar -->
+        <div class="qa-dock">
+          <div class="qa-hint">
+            <span data-fa="برای افزودن سریع تایپ کنید — زبان طبیعی فارسی و انگلیسی" data-en="Type to capture fast — natural Persian & English">برای افزودن سریع تایپ کنید — زبان طبیعی فارسی و انگلیسی</span>
+            <span class="qa-parse" id="qaParse"></span>
+          </div>
+          <div class="qa-bar">
+            <span class="qi"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg></span>
+            <input class="qa-input" id="qaInput" placeholder="فردا ساعت ۶ جلسه با علی #کار مهم…" />
+            <span class="qa-chips" id="qaChips"></span>
+            <span class="qa-kbd">⌘K</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:34px">
+      <div class="annot"><span class="n">۱</span><div><b>ریل آماری جای چهار کارت را گرفت</b><p>حلقه‌ی پیشرفت، شعله، انرژی و زمان تمرکز در یک سطر باریک جمع شدند — حدود ۶۸px به‌جای ~۲۶۰px ارتفاع. اطلاعات هست، اما فریاد نمی‌زند و فهرست را به بالای صفحه می‌آورد.</p></div></div>
+      <div class="annot"><span class="n">۲</span><div><b>نوار «الان» — تنها پاسخِ صفحه</b><p>یک کارت با حاشیه‌ی iris که می‌گوید الان چه چیزی را شروع کنی. دکمه‌ی پخش، تمرکز را یک‌کلیکی باز می‌کند؛ حالت «عمیق» بالای نمونه، همه‌چیز را کم‌رنگ می‌کند جز همین نوار. این مهم‌ترین تغییر نسبت به نسخه فعلی است.</p></div></div>
+      <div class="annot"><span class="n">۳</span><div><b>ریل زمان + خط «الان»</b><p>یک خط مویی عمودی از بالای اولین گروه تا انتهای آخرین گروه، با نقطه‌ی نفس‌کشن در ساعت فعلی. کاربر می‌بیند «الان کجای روزم». گروه‌ها با شکاف و خط مویی جدا می‌شوند، نه با کارت‌های شیشه‌ای تو در تو.</p></div></div>
+      <div class="annot"><span class="n">۴</span><div><b>سطر تسک؛ آرام، با اکشن در هاور</b><p>هر سطر: چک‌باکس دایره‌ای، عنوان، متادیتای ریز (ساعت، پروژه، برچسب) و نقطه‌ی اولویت در لبه. اکشن‌ها (تمرکز، ویرایش) فقط در هاور/فوکس ظاهر می‌شوند — تمیز وقتی استفاده نمی‌شود، سریع وقتی لازم است.</p></div></div>
+      <div class="annot"><span class="n">۵</span><div><b>کامندبار شناور با parse زنده</b><p>مثل Raycast: تایپ کنید، توکن‌های تاریخ/برچسب/اولویت به‌صورت چیپ در می‌آیند <i>قبل از</i> اینتر. در نمونه واقعی تایپ کنید: «فردا ساعت ۶ جلسه با علی #کار مهم» — چیپ‌ها هم‌زمان ساخته می‌شوند و هیچ ورودی‌ای گم نمی‌شود.</p></div></div>
+      <div class="annot"><span class="n">۶</span><div><b>دوزبانه و راست‌به‌چپ در هسته</b><p>دکمه‌ی «فارسی/English» بالای نمونه، کل صفحه را برمی‌گرداند — فقط متن نه؛ چیدمان، ریل، موقعیت دکمه‌ها و جهت خط زمانی هم عوض می‌شوند. اعداد فارسی، تاریخ جلالی و «صبح/عصر/شب» در حالت فارسی؛ ۱۲ ساعت و Gregorian در انگلیسی.</p></div></div>
+    </div>
+  </div>
+</section>
+<div class="rule"></div>
+
+<!-- ==================== 03 KEY SCREENS ==================== -->
+<section id="screens">
+  <div class="wrap">
+    <div class="sec-head"><span class="sec-num">۰۳</span><h2 class="sec-title">صفحه‌های کلیدی</h2></div>
+    <p class="sec-sub">هر صفحه با همان زبان طراحی بازسازی شد. در همه‌ی نمونه‌ها، دکمه‌ی «فارسی / English» بالای بخش «امروز» روی این‌ها هم اثر می‌گذارد — متن، جهت، و اعداد.</p>
+
+    <div class="screens">
+      <!-- TASK DETAIL -->
+      <div class="scr">
+        <div class="scr-in">
+          <div class="scr-top">
+            <button class="cbx" style="width:22px;height:22px"></button>
+            <h4 data-fa="جلسه تیم محصول" data-en="Product team sync">جلسه تیم محصول</h4>
+          </div>
+          <div class="insp-row"><span class="k" data-fa="تاریخ" data-en="Date">تاریخ</span><span data-fa="امروز · ۱۴ مهر" data-en="Today · Oct 5">امروز · ۱۴ مهر</span></div>
+          <div class="insp-row"><span class="k" data-fa="ساعت" data-en="Time">ساعت</span><span style="font-family:var(--font-en)" data-fa="۱۰:۳۰ صبح" data-en="10:30 AM">۱۰:۳۰ صبح</span></div>
+          <div class="insp-row"><span class="k" data-fa="اولویت" data-en="Priority">اولویت</span><span class="chip"><span class="cd pr-high"></span><span data-fa="بالا" data-en="High">بالا</span></span></div>
+          <div class="insp-row"><span class="k" data-fa="پروژه" data-en="Project">پروژه</span><span class="chip"><span class="cd" style="background:var(--violet)"></span>Mz Planer</span></div>
+          <div class="insp-row"><span class="k" data-fa="برچسب‌ها" data-en="Tags">برچسب‌ها</span><span style="display:flex;gap:6px;flex-wrap:wrap"><span class="chip"><span class="cd" style="background:var(--iris)"></span><span data-fa="کاری" data-en="work">کاری</span></span><span class="chip"><span class="cd" style="background:var(--mint)"></span><span data-fa="تیم" data-en="team">تیم</span></span></span></div>
+          <div class="insp-row"><span class="k" data-fa="تکرار" data-en="Repeats">تکرار</span><span data-fa="هر هفته، پنجشنبه" data-en="Every week, Thursday">هر هفته، پنجشنبه</span></div>
+          <div class="insp-row" style="border-bottom:0;padding-bottom:4px"><span class="k" data-fa="زیرمجموعه‌ها" data-en="Subtasks">زیرمجموعه‌ها</span><span style="font-family:var(--font-en);color:var(--ink-3)" data-fa="۱ از ۲" data-en="1 of 2">۱ از ۲</span></div>
+          <div class="insp-sub"><span class="chk-sm on"></span><span style="text-decoration:line-through;color:var(--ink-3)" data-fa="آماده‌سازی دستور جلسه" data-en="Prepare agenda">آماده‌سازی دستور جلسه</span></div>
+          <div class="insp-sub"><span class="chk-sm"></span><span data-fa="جمع‌آوری بازخورد تیم" data-en="Collect team feedback">جمع‌آوری بازخورد تیم</span></div>
+        </div>
+        <div class="scr-cap"><b data-fa="جزئیات کار — بازرس" data-en="Task Detail — Inspector">جزئیات کار — بازرس</b><span data-fa="بازرسِ کنارِ فهرست (نه صفحه‌ی جدا) — کاربر زمینه‌اش را از دست نمی‌دهد. در موبایل به ورق پایین‌کشیدنی تبدیل می‌شود." data-en="A side inspector, not a separate page — context is never lost. Becomes a bottom sheet on mobile.">بازرسِ کنارِ فهرست (نه صفحه‌ی جدا) — کاربر زمینه‌اش را از دست نمی‌دهد. در موبایل به ورق پایین‌کشیدنی تبدیل می‌شود.</span></div>
+      </div>
+
+      <!-- HABITS -->
+      <div class="scr">
+        <div class="scr-in">
+          <div class="scr-top"><h4 data-fa="عادت‌ها" data-en="Habits">عادت‌ها</h4>
+            <span class="chip" style="margin-inline-start:auto;border-color:var(--amber);color:var(--amber)">🔥 <span data-fa="۱۲ روز" data-en="12 days">۱۲ روز</span></span></div>
+          <div class="habit" style="border-top:0">
+            <span class="hi">📖</span>
+            <div style="flex:1;min-width:0"><b data-fa="۲۰ دقیقه مطالعه" data-en="Read 20 minutes">۲۰ دقیقه مطالعه</b><span data-fa="۲۸ روز پیوسته · بهترین: ۳۱" data-en="28 day streak · best 31">۲۸ روز پیوسته · بهترین: ۳۱</span></div>
+            <div class="heat" style="grid-template-columns:repeat(7,14px);flex:initial;gap:3px">
+              <i class="l3"></i><i class="l4"></i><i class="l2"></i><i class="l4"></i><i class="l4"></i><i class="l1"></i><i class="l4"></i>
+              <i class="l4"></i><i class="l3"></i><i class="l4"></i><i class="l4"></i><i class="l2"></i><i class="l4"></i><i class="l4"></i>
+            </div>
+          </div>
+          <div class="habit">
+            <span class="hi">🏃</span>
+            <div style="flex:1;min-width:0"><b data-fa="پیاده‌روی صبحگاهی" data-en="Morning walk">پیاده‌روی صبحگاهی</b><span data-fa="۵ روز پیوسته" data-en="5 day streak">۵ روز پیوسته</span></div>
+            <div class="energy-pips" style="height:14px"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i></div>
+          </div>
+          <div class="habit">
+            <span class="hi">🧘</span>
+            <div style="flex:1;min-width:0"><b data-fa="۱۰ دقیقه تمرکز" data-en="Meditate 10 min">۱۰ دقیقه تمرکز</b><span data-fa="۱۹ روز پیوسته" data-en="19 day streak">۱۹ روز پیوسته</span></div>
+            <span class="chip"><span class="cd" style="background:var(--mint)"></span><span data-fa="امروز انجام شد" data-en="done today">امروز انجام شد</span></span>
+          </div>
+          <p class="lbl" style="margin:16px 0 8px" data-fa="۱۴ هفته گذشته" data-en="Last 14 weeks">۱۴ هفته گذشته</p>
+          <div class="heat"><i class="l1"></i><i class="l2"></i><i class="l3"></i><i class="l4"></i><i class="l1"></i><i></i><i class="l2"></i><i class="l4"></i><i class="l3"></i><i class="l2"></i><i class="l4"></i><i class="l1"></i><i class="l3"></i><i class="l4"></i>
+            <i class="l2"></i><i class="l4"></i><i class="l2"></i><i class="l1"></i><i class="l3"></i><i class="l4"></i><i></i><i class="l2"></i><i class="l4"></i><i class="l4"></i><i class="l3"></i><i class="l4"></i><i class="l2"></i><i class="l4"></i></div>
+        </div>
+        <div class="scr-cap"><b data-fa="عادت‌ها — پاداش باوقار" data-en="Habits — dignified reward">عادت‌ها — پاداش باوقار</b><span data-fa="هیچ انیمیشن کودکانه‌ای نیست. جشن = حلقه‌ی رنگ که پر می‌شود + شمارنده‌ی فنری + یک توست آرام. نمودار حرارتی واقعی (۱۴ هفته) جای نشان‌های بازی‌گونه را می‌گیرد." data-en="No childish gamification. Celebration = a filled ring, a springing counter, one calm toast. A real 14-week heatmap replaces badges.">هیچ انیمیشن کودکانه‌ای نیست. جشن = حلقه‌ی رنگ که پر می‌شود + شمارنده‌ی فنری + یک توست آرام. نمودار حرارتی واقعی (۱۴ هفته) جای نشان‌های بازی‌گونه را می‌گیرد.</span></div>
+      </div>
+
+      <!-- FOCUS -->
+      <div class="scr">
+        <div class="scr-in focus-scr">
+          <div class="focus-modes">
+            <button class="fm on" data-fa="تمرکز" data-en="Focus">تمرکز</button>
+            <button class="fm" data-fa="استراحت کوتاه" data-en="Short break">استراحت کوتاه</button>
+            <button class="fm" data-fa="استراحت بلند" data-en="Long break">استراحت بلند</button>
+          </div>
+          <div class="big-ring">
+            <svg width="186" height="186" viewBox="0 0 186 186">
+              <circle cx="93" cy="93" r="82" fill="none" stroke="var(--line-2)" stroke-width="9"/>
+              <circle cx="93" cy="93" r="82" fill="none" stroke="url(#fg)" stroke-width="9" stroke-linecap="round"
+                stroke-dasharray="515" stroke-dashoffset="185"/>
+              <defs><linearGradient id="fg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7C8CFF"/><stop offset="1" stop-color="#7FD6C3"/></linearGradient></defs>
+            </svg>
+            <div class="br-txt">
+              <span class="br-time" id="focusClock">۱۸:۲۴</span>
+              <span class="br-lbl" data-fa="جلسه تیم محصول" data-en="Product team sync">جلسه تیم محصول</span>
+            </div>
+          </div>
+          <div style="display:flex;gap:10px">
+            <button class="btn btn-primary btn-sm" data-fa="توقف" data-en="Pause">توقف</button>
+            <button class="btn btn-glass btn-sm" data-fa="پایان" data-en="Finish">پایان</button>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;font-size:12px;color:var(--ink-3)">
+            <span data-fa="صدای محیط: باران آرام" data-en="Ambient: gentle rain">صدای محیط: باران آرام</span>
+            <span class="tgl on" style="width:32px;height:19px"></span>
+          </div>
+        </div>
+        <div class="scr-cap"><b data-fa="تایمر تمرکز — حلقه‌ی زنده" data-en="Focus Timer — living ring">تایمر تمرکز — حلقه‌ی زنده</b><span data-fa="حلقه با گذشت زمان نازک می‌شود (نه پر). انتخاب حالت، مجموع را از تنظیم همان حالت می‌خواند. با مخفی شدن تب خودکار pause می‌شود." data-en="The ring thins as time passes rather than filling. Each mode reads its own duration for the total, and the timer auto-pauses when the tab hides.">حلقه با گذشت زمان نازک می‌شود (نه پر). انتخاب حالت، مجموع را از تنظیم همان حالت می‌خواند. با مخفی شدن تب خودکار pause می‌شود.</span></div>
+      </div>
+
+      <!-- ANALYTICS -->
+      <div class="scr">
+        <div class="scr-in">
+          <div class="scr-top"><h4 data-fa="تحلیل‌ها" data-en="Analytics">تحلیل‌ها</h4>
+            <div class="seg" style="margin-inline-start:auto"><button class="on" data-fa="هفته" data-en="Week">هفته</button><button data-fa="ماه" data-en="Month">ماه</button></div></div>
+          <div class="an-kpis">
+            <div class="an-kpi"><b>۸۶٪</b><span data-fa="نرخ تکمیل" data-en="completion">نرخ تکمیل</span></div>
+            <div class="an-kpi"><b>۱۴س ۲۰د</b><span data-fa="تمرکز" data-en="focus time">تمرکز</span></div>
+            <div class="an-kpi"><b>۴٫۲</b><span data-fa="میانگین انرژی" data-en="avg energy">میانگین انرژی</span></div>
+          </div>
+          <p class="lbl" style="margin-bottom:6px" data-fa="انرژی در برابر بازده" data-en="Energy vs output">انرژی در برابر بازده</p>
+          <div class="spark" id="anSpark">
+            <i style="height:38%"></i><i style="height:52%"></i><i style="height:44%"></i><i style="height:68%"></i><i style="height:58%"></i><i style="height:84%"></i><i class="pk" style="height:96%"></i>
+          </div>
+          <div class="an-x"><span>ش</span><span>ی</span><span>د</span><span>س</span><span>چ</span><span>پ</span><span>ج</span></div>
+          <p style="font-size:12.5px;color:var(--ink-2);margin-top:14px" data-fa="👀 بهترین بازده شما پنجشنبه‌ها با انرژی ۴+ است. دو کار سخت را همان روز بگذارید." data-en="👀 Your best output is Thursday at 4+ energy. Schedule hard tasks there.">👀 بهترین بازده شما پنجشنبه‌ها با انرژی ۴+ است. دو کار سخت را همان روز بگذارید.</p>
+        </div>
+        <div class="scr-cap"><b data-fa="تحلیل — بینش به‌جای اعداد" data-en="Analytics — insight, not data">تحلیل — بینش به‌جای اعداد</b><span data-fa="سه KPI، یک نمودار، یک جمله‌ی بینش. هیچ داشبورد شلوغی. هدف: کاربر یک کار متفاوت فردا انجام دهد." data-en="Three KPIs, one chart, one insight sentence. No dashboard clutter — the goal is one different decision tomorrow.">سه KPI، یک نمودار، یک جمله‌ی بینش. هیچ داشبورد شلوغی. هدف: کاربر یک کار متفاوت فردا انجام دهد.</span></div>
+      </div>
+
+      <!-- SETTINGS -->
+      <div class="scr">
+        <div class="scr-in">
+          <div class="scr-top"><h4 data-fa="تنظیمات" data-en="Settings">تنظیمات</h4></div>
+          <div class="set-grp">
+            <span class="lbl" data-fa="ظاهر" data-en="Appearance">ظاهر</span>
+            <div class="set"><div><b data-fa="حالت تاریک" data-en="Dark mode">حالت تاریک</b><div class="sub" data-fa="تاریک‌اول؛ روشن هم کامل پشتیبانی می‌شود" data-en="Dark-first; light fully supported">تاریک‌اول؛ روشن هم کامل پشتیبانی می‌شود</div></div><div class="set-r"><span class="tgl on"></span></div></div>
+            <div class="set"><b data-fa="رنگ لهجه" data-en="Accent color">رنگ لهجه</b><div class="set-r"><span style="display:flex;gap:6px"><i style="width:19px;height:19px;border-radius:50%;background:var(--iris);border:2px solid var(--ink)"></i><i style="width:19px;height:19px;border-radius:50%;background:var(--mint)"></i><i style="width:19px;height:19px;border-radius:50%;background:var(--violet)"></i><i style="width:19px;height:19px;border-radius:50%;background:var(--amber)"></i></span></div></div>
+            <div class="set"><b data-fa="چگالی" data-en="Density">چگالی</b><div class="set-r"><div class="seg"><button class="on" data-fa="راحت" data-en="Cozy">راحت</button><button data-fa="فشرده" data-en="Compact">فشرده</button></div></div></div>
+          </div>
+          <div class="set-grp">
+            <span class="lbl" data-fa="زبان و تقویم" data-en="Language & calendar">زبان و تقویم</span>
+            <div class="set"><b data-fa="زبان رابط" data-en="Interface language">زبان رابط</b><div class="set-r"><div class="seg"><button class="on">فارسی</button><button>English</button></div></div></div>
+            <div class="set"><b data-fa="تقویم" data-en="Calendar">تقویم</b><div class="set-r"><div class="seg"><button class="on">جلالی</button><button>میلادی</button><button data-fa="دوگانه" data-en="Dual">دوگانه</button></div></div></div>
+          </div>
+          <div class="set-grp">
+            <span class="lbl" data-fa="داده" data-en="Data">داده</span>
+            <div class="set"><div><b data-fa="همگام‌سازی ابری سرتاسر رمزنگاری‌شده" data-en="End-to-end encrypted cloud sync">همگام‌سازی ابری سرتاسر رمزنگاری‌شده</b><div class="sub" data-fa="کلید فقط روی دستگاه شما می‌ماند" data-en="Key never leaves your device">کلید فقط روی دستگاه شما می‌ماند</div></div><div class="set-r"><span class="tgl on"></span></div></div>
+          </div>
+        </div>
+        <div class="scr-cap"><b data-fa="تنظیمات — قدرتمند، آرام" data-en="Settings — powerful, never loud">تنظیمات — قدرتمند، آرام</b><span data-fa="سه گروه بسته‌شونده، یک ستون، ستون راست برای کنترل. تنظیمات نامربوط جمع می‌شود — نه ۴۰ سوییچ روی یک صفحه." data-en="Three collapsible groups, one column, control on the trailing side. Irrelevant settings collapse — not forty switches on one page.">سه گروه بسته‌شونده، یک ستون، ستون راست برای کنترل. تنظیمات نامربوط جمع می‌شود — نه ۴۰ سوییچ روی یک صفحه.</span></div>
+      </div>
+
+      <!-- ONBOARDING -->
+      <div class="scr">
+        <div class="scr-in">
+          <div class="ob">
+            <div class="ob-logo"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1"/></svg></div>
+            <h4 data-fa="یک جمله بنویس. ما بقیه‌اش را می‌فهمیم." data-en="Write one line. We understand the rest.">یک جمله بنویس. ما بقیه‌اش را می‌فهمیم.</h4>
+            <div class="qa-bar" style="width:100%;max-width:420px;text-align:start">
+              <span class="qi"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg></span>
+              <input class="qa-input" placeholder="فردا ساعت ۶ جلسه با علی #کار مهم" readonly />
+              <span class="qa-chips"><span class="qa-chip chip" style="border-color:var(--iris);color:var(--iris)"><span class="cd" style="background:var(--iris)"></span>فردا</span><span class="qa-chip chip" style="border-color:var(--iris);color:var(--iris)"><span class="cd" style="background:var(--iris)"></span>۱۸:۰۰</span><span class="qa-chip chip" style="border-color:var(--violet);color:var(--violet)"><span class="cd" style="background:var(--violet)"></span>#کار</span></span>
+            </div>
+            <p data-fa="فقط ۳ گام: زبان → یک کار واقعی → شروع. زیر ۳۰ ثانیه." data-en="Only three steps: language, one real task, go. Under 30 seconds.">فقط ۳ گام: زبان → یک کار واقعی → شروع. زیر ۳۰ ثانیه.</p>
+            <div class="ob-dots"><i></i><i class="on"></i><i></i></div>
+            <button class="btn btn-primary btn-sm" data-fa="شروع" data-en="Start">شروع</button>
+          </div>
+        </div>
+        <div class="scr-cap"><b data-fa="شروع (Onboarding)" data-en="Onboarding">شروع (Onboarding)</b><span data-fa="به‌جای تور آموزشی، کاربر همان تایپ را تمرین می‌کند که بعداً هر روز می‌کند. ارزش زیر ۳۰ ثانیه ثابت می‌شود." data-en="Instead of a tutorial tour, the user practices the exact typing they'll do daily. Value proven in under 30 seconds.">به‌جای تور آموزشی، کاربر همان تایپ را تمرین می‌کند که بعداً هر روز می‌کند. ارزش زیر ۳۰ ثانیه ثابت می‌شود.</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+<div class="rule"></div>
+
+<!-- ==================== 04 PRINCIPLES ==================== -->
+<section id="principles">
+  <div class="wrap">
+    <div class="sec-head"><span class="sec-num">۰۴</span><h2 class="sec-title">اصول تعامل و میکرو-انیمیشن</h2></div>
+    <p class="sec-sub">ده قاعده‌ی غیرقابل‌مذاکره. هر تغییر UI باید با این‌ها بسنجیده شود، وگرنه برنمی‌گردد.</p>
+    <div class="rules">
+      <div class="rule-card"><div class="rn">P 01</div><b>هر کنش، پس‌خور فوری</b><p>هیچ کلیکی بدون پاسخ زیر ۱۰۰ms نمی‌ماند. لایه‌ی UI بلافاصله optimistic به‌روز می‌شود؛ نوشتن در پس‌زمینه انجام می‌شود و در صورت خطا برمی‌گردد.</p></div>
+      <div class="rule-card"><div class="rn">P 02</div><b>هزینه‌ی صفر برای شروع تمرکز</b><p>از هر جای برنامه، «تمرکز» حداکثر یک کلیک/میان‌بر است. تمرکز حالت نیست که کاربر باید پیدا کند؛ یک کنش همیشه‌حاضر است.</p></div>
+      <div class="rule-card"><div class="rn">P 03</div><b>کیبورد شهروند درجه‌یک</b><p><code>⌘K</code> کامندبار، <code>N</code> کار جدید، <code>/</code> جست‌وجو، <code>Esc</code> خروج از تمرکز، <code>1-4</code> اولویت. همه‌چیز قابل انجام با کیبورد.</p></div>
+      <div class="rule-card"><div class="rn">P 04</div><b>هیچ مودالِ مسدودکننده‌ای نیست</b><p>اگر با ورق جانبی یا درون‌خطی حل می‌شود، مودال نساز. فقط تأییدهای مخرب مودال می‌شوند — و آن‌ها هم با <code>Esc</code> بسته می‌شوند.</p></div>
+      <div class="rule-card"><div class="rn">P 05</div><b>تخریب، فقط با قصد مشخص</b><p>حذف همیشه Undo دارد (۷ ثانیه). «حذف برای همیشه» فقط از آرشیو، با تایپ نام. پیش‌فرض همیشه آرشیو است.</p></div>
+      <div class="rule-card"><div class="rn">P 06</div><b>هرگز از صفحه بیرون نپر</b><p>بازرس، ورق، پالت — همه همانجا سوار می‌شوند. تغییر مسیر کامل فقط با انتخاب صریح کاربر در ناوبری.</p></div>
+      <div class="rule-card"><div class="rn">P 07</div><b>کاهش حرکت، مطلق</b><p>روشن بودن <code>prefers-reduced-motion</code> یا سوییچ داخلی، هر انیمیشنی را به ~۰ خاموش می‌کند — بدون حذف اطلاعات (تنها شفافیت‌ها فوری می‌شوند).</p></div>
+      <div class="rule-card"><div class="rn">P 08</div><b>محیطی همیشه قابل توقف</b><p>هر حرکت تزئینی <code>data-ambient</code> دارد و وقتی تب پنهان است pause می‌شود — موبایل و باتری محترم‌اند.</p></div>
+      <div class="rule-card"><div class="rn">P 09</div><b>جزئیات ورودی دوزبانه</b><p>ورودی دقیقه/تعداد با <code>type="text" inputMode="numeric"</code> و با نرمال‌سازی ارقام ۰-۹ و ٠-٩ پیش از اعتبارسنجی — وگرنه کیبورد فارسی مقدار را خالی می‌کند.</p></div>
+      <div class="rule-card"><div class="rn">P 10</div><b>RTL در هسته، نه چسبانده</b><p>فقط <code>dir</code> را عوض نکن — اندازه‌ها، آیکون‌های جهت‌دار، محل دکمه‌های اصلی، خط زمان و ترتیب ستون‌ها منطقی‌اند (<code>inset-inline</code>)، نه فیزیکی (<code>left/right</code>).</p></div>
+    </div>
+
+    <h4 class="lbl" style="margin:34px 0 14px">میکرو-انیمیشن‌های امضادار</h4>
+    <table>
+      <thead><tr><th>کنش</th><th>حرکت</th><th>فنر / مدت</th><th>چرا</th></tr></thead>
+      <tbody>
+        <tr><td data-fa="تیک زدن کار" data-en="Completing a task">تیک زدن کار</td><td data-fa="چک SVG کشیده می‌شود → عنوان کم‌رنگ → سطر جمع می‌شود" data-en="SVG check draws → title dims → row collapses">چک SVG کشیده می‌شود → عنوان کم‌رنگ → سطر جمع می‌شود</td><td><code>layout spring 520</code></td><td data-fa="یک حرکت پیوسته؛ حس «انجام شد» بدون پرش" data-en="One continuous motion; closure without a jump">یک حرکت پیوسته؛ حس «انجام شد» بدون پرش</td></tr>
+        <tr><td data-fa="افزودن سریع" data-en="Quick add">افزودن سریع</td><td data-fa="چیپ از پایین می‌آید؛ سطر جدید از بالا وارد" data-en="Chip rises in; new row enters from above">چیپ از پایین می‌آید؛ سطر جدید از بالا وارد</td><td><code>snappy 520</code></td><td data-fa="تأیید بصری بدون قطع تایپ" data-en="Visual confirmation without interrupting typing">تأیید بصری بدون قطع تایپ</td></tr>
+        <tr><td data-fa="ورود به تمرکز" data-en="Entering focus">ورود به تمرکز</td><td data-fa="بقیه کم‌رنگ و بلور ۲px؛ حلقه از ۰ می‌چرخد" data-en="Everything dims + 2px blur; ring rotates from 0">بقیه کم‌رنگ و بلور ۲px؛ حلقه از ۰ می‌چرخد</td><td><code>500ms soft</code></td><td data-fa="جهان بیرون محو می‌شود، بدون تغییر مسیر" data-en="The world fades out without navigation">جهان بیرون محو می‌شود، بدون تغییر مسیر</td></tr>
+        <tr><td data-fa="به‌روزرسانی شمارنده" data-en="Counter update">به‌روزرسانی شمارنده</td><td data-fa="رقم جدید از پایین با کشسانی می‌نشیند" data-en="New digit settles from below with elasticity">رقم جدید از پایین با کشسانی می‌نشیند</td><td><code>snappy 520</code></td><td data-fa="پیشرفت حس می‌شود، نه فقط خوانده" data-en="Progress is felt, not just read">پیشرفت حس می‌شود، نه فقط خوانده</td></tr>
+        <tr><td data-fa="پیوستگی عادت" data-en="Habit streak">پیوستگی عادت</td><td data-fa="سلول حرارتی پر می‌شود؛ توست آرام می‌آید و می‌رود" data-en="Heatmap cell fills; one calm toast in/out">سلول حرارتی پر می‌شود؛ توست آرام می‌آید و می‌رود</td><td><code>400ms + 2.4s</code></td><td data-fa="جشن باوقار، نه بازی کودکانه" data-en="Dignified celebration, not a kids' game">جشن باوقار، نه بازی کودکانه</td></tr>
+        <tr><td data-fa="تغییر تم" data-en="Theme switch">تغییر تم</td><td data-fa="انتقال عرضی View Transitions، ۳۲۰ms" data-en="View Transitions cross-fade, 320ms">انتقال عرضی View Transitions، ۳۲۰ms</td><td><code>320ms ease</code></td><td data-fa="آرام، بدون فلش سفید" data-en="Calm, no white flash">آرام، بدون فلش سفید</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+<div class="rule"></div>
+
+<!-- ==================== 05 ARCHITECTURE ==================== -->
+<section id="architecture">
+  <div class="wrap">
+    <div class="sec-head"><span class="sec-num">۰۵</span><h2 class="sec-title">معماری فنی پیشنهادی</h2></div>
+    <p class="sec-sub">اگر بازسازی می‌کردیم. ستون فقرات همان Next.js 16 + TypeScript strict + Zustand + Tailwind 4 است که امروز دارید — تغییرها در جایی است که «حس پریمیوم» از آن می‌آید: لایه‌ی داده، کش و زمان‌بندی.</p>
+
+    <div class="two">
+      <div class="panel">
+        <h4>لایه‌ی داده — local-first با CRDT سبک</h4>
+        <p class="hint">همگام‌سازی فعلی snapshot‌محور است. برای چند دستگاهی و آفلاین واقعی، لاگ تغییرات لازم است.</p>
+        <table style="font-size:12.5px">
+          <tbody>
+            <tr><td style="border:0;padding:7px 0"><b style="font-weight:600">۱. Source of truth</b><br><span style="color:var(--ink-3)">همان <code>localStorage</code> با کلید <code>mzplaner.v1</code> — ولی با نسخه‌بندی طرح‌واره و مهاجرت‌گر خودکار.</span></td></tr>
+            <tr><td style="border:0;padding:7px 0"><b style="font-weight:600">۲. لاگ تغییرات</b><br><span style="color:var(--ink-3)">هر جهش صف می‌شود: <code>{op, id, ts, deviceId}</code>. همگام‌سازی = پخش لاگ، نه بازنویسی کل حالت.</span></td></tr>
+            <tr><td style="border:0;padding:7px 0"><b style="font-weight:600">۳. ادغام</b><br><span style="color:var(--ink-3)">LWW برای فیلدهای ساده (عنوان، تاریخ)، اجتماع برای برچسب‌ها، شمارنده‌ی افزایشی برای <code>focusSec</code> و <code>history</code>.</span></td></tr>
+            <tr><td style="border:0;padding:7px 0"><b style="font-weight:600">۴. رمزنگاری</b><br><span style="color:var(--ink-3)"><code>AES-GCM</code> با کلید مشتق‌شده از عبارتی که کاربر نگه می‌دارد. سرور فقط بایت می‌بیند.</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="panel">
+        <h4>اجرا و کش</h4>
+        <p class="hint">هدف: پاسخ زیر ۱۰۰ms حتی با شبکه‌ی ضعیف ایران.</p>
+        <table style="font-size:12.5px">
+          <tbody>
+            <tr><td style="border:0;padding:7px 0"><b style="font-weight:600">React Compiler + RSC</b><br><span style="color:var(--ink-3)">صفحه‌ی شل سرور-رندر می‌شود؛ پوسته‌ی تعاملی کلاینت. حذف <code>useMemo</code> دستی.</span></td></tr>
+            <tr><td style="border:0;padding:7px 0"><b style="font-weight:600">Service Worker</b><br><span style="color:var(--ink-3)">Precache پوسته (stale-while-revalidate) + صف <code>Background Sync</code> برای تغییرات آفلاین.</span></td></tr>
+            <tr><td style="border:0;padding:7px 0"><b style="font-weight:600">Zustand slice‌ها</b><br><span style="color:var(--ink-3)">تقسیم استور به <code>tasks</code>/<code>habits</code>/<code>ui</code>/<code>settings</code> + انتخاب‌گرهای اتمی تا هر تغییر کل درخت را رندر نکند.</span></td></tr>
+            <tr><td style="border:0;padding:7px 0"><b style="font-weight:600">فونت self-hosted</b><br><span style="color:var(--ink-3)">وزیرمتن و گیست از <code>/public/fonts</code> با <code>next/font/local</code> + <code>size-adjust</code> — بدون درخواست به Google در ایران.</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="two" style="margin-top:20px">
+      <div class="panel">
+        <h4>اعلان و زمان‌بندی</h4>
+        <p class="hint">الگوی فعلی (cron-job.org → rout) درست است؛ فقط مقاوم‌تر شود.</p>
+        <div class="annot" style="border-top:0;padding-top:0"><span class="n">۱</span><div><b>دستیابی دقیق</b><p>cron هر دقیقه بازه‌ی <code>[lastRun, now]</code> را می‌پوشاند و کلید idempotent می‌زند تا ری‌استارت سرور اعلان تکراری نسازد.</p></div></div>
+        <div class="annot"><span class="n">۲</span><div><b>Fallback محلی</b><p>اگر تلفن باز است، Web Notification هم زمان‌بندی می‌شود — کاربر آفلاین هم یادآوری می‌گیرد.</p></div></div>
+        <div class="annot"><span class="n">۳</span><div><b>احترام به وقت خواب</b><p>بازه‌ی «مزاحم نشو» در پروفایل کاربر؛ اعلان‌های داخل بازه به صبح منتقل می‌شوند.</p></div></div>
+      </div>
+      <div class="panel">
+        <h4>کیفیت و اندازه‌گیری</h4>
+        <p class="hint">بدون این‌ها «حس پریمیوم» یک ادعاست.</p>
+        <div class="annot" style="border-top:0;padding-top:0"><span class="n">۱</span><div><b>بودجه‌ی کارایی</b><p>INP &lt; ۱۰۰ms، LCP &lt; ۱.۲s روی موبایل میان‌رده. تست در CI با Lighthouse بودجه‌دار.</p></div></div>
+        <div class="annot"><span class="n">۲</span><div><b>آزمون دو زبانه</b><p>هر کامپوننت در <code>fa/rtl</code> و <code>en/ltr</code> رندر می‌شود؛ تست شکست می‌خورد اگر کلید i18n در یک دیکشنری نباشد.</p></div></div>
+        <div class="annot"><span class="n">۳</span><div><b>آنالیتیکس بی‌طرف</b><p>بی‌نام، خودمیزبان. فقط «چه چیزی کار می‌کند» — بدون ردیابی محتوای کاربر.</p></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+<div class="rule"></div>
+
+<!-- ==================== 06 ROADMAP ==================== -->
+<section id="roadmap">
+  <div class="wrap">
+    <div class="sec-head"><span class="sec-num">۰۶</span><h2 class="sec-title">نقشه‌راه اولویت‌دار</h2></div>
+    <p class="sec-sub">هرچه کاربر <b style="color:var(--ink)">اولین بار</b> می‌بیند، بیشترین اثر را دارد. پس ترتیب این است: نخست حس، بعد هوش، بعد عمق. هر فاز خودش به‌تنهایی قابل انتشار است.</p>
+
+    <div class="road">
+      <div class="rd">
+        <span class="rd-phase">PHASE 1</span>
+        <div>
+          <b>حسِ پریمیوم — همان چیزی که «وای» می‌سازد</b>
+          <p>ریل آماری جای چهار کارت، نوار «الان»، ریل زمان با خط ساعت، بازآرایی کامل سطر تسک، توکن‌های جدید رنگ/ارتفاع، تایپوگرافی tabular، ورودها با فنر. بدون قابلیت جدید — فقط همان کارها، اما با ۱۰ برابر حس بهتر. این فاز بیشترین اثر بر ادراک را دارد و کمترین ریسک را.</p>
+          <span class="wow">✦ بیشترین «وای» به‌ازای هر ساعت کار</span>
+        </div>
+      </div>
+      <div class="rd">
+        <span class="rd-phase p2">PHASE 2</span>
+        <div>
+          <b>سرعت و هوش — چیزی که هر روز لمس می‌شود</b>
+          <p>کامندبار <code>⌘K</code> با parse زنده، بازرس کنار-فهرست، میان‌برهای کامل کیبورد، Undo سراسری، درگ‌انددراپ روی ریل زمان، و «شروع تمرکز» یک‌کلیکی از هر جا. این فاز است که کاربر را از «استفاده می‌کنم» به «بدونش نمی‌توانم» می‌برد.</p>
+          <span class="wow">✦ چسبندگی روزانه</span>
+        </div>
+      </div>
+      <div class="rd">
+        <span class="rd-phase p3">PHASE 3</span>
+        <div>
+          <b>لایه‌ی انسانی — چیزی که هیچ رقیبی ندارد</b>
+          <p>انرژی ↔ بازده در تحلیل‌ها، همگام‌سازی رمزنگاری‌شده، عادت‌های حرارتی، حالت عمیق کامل، صداهای محیطی، آفلاین واقعی با Background Sync. Mz Planer اینجا از Todoist و TickTick جدا می‌شود.</p>
+          <span class="wow">✦ تفکیک‌کننده</span>
+        </div>
+      </div>
+      <div class="rd">
+        <span class="rd-phase p4">PHASE 4</span>
+        <div>
+          <b>براق‌کاری و بازارجهانی</b>
+          <p>آنبوردینگ زیر ۳۰ ثانیه، شخصی‌سازی لهجه/چگالی/فونت، View Transitions کامل، دسترس‌پذیری سطح AA، و پروفایل عمومی «صفحه‌ی امروز» برای اشتراک‌گذاری. اینجاست که می‌شود با اطمینان $۱۰–۱۵ خواست.</p>
+          <span class="wow">✦ آماده‌ی پرداخت</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:26px">
+      <h4>چرا کاربر فارسی‌زبان این را به دنیا توصیه می‌کند</h4>
+      <p class="hint" style="margin-bottom:0">هیچ محصول جهانی RTL را «هسته‌ای» حل نکرده — همه بعداً چسبانده‌اند. اگر کیبورد فارسی، ورودی ارقام، تقویم جلالی، جهت چیدمان و تایپوگرافی از روز اول درست باشند، کاربر ایرانی ابزارش را بی‌خجالت به یک تیم بین‌المللی نشان می‌دهد. این تفاوت بین «اپ خوب فارسی» و «محصول جهانی که فارسی را جدی گرفته» است.</p>
+    </div>
+  </div>
+</section>
+
+<footer>Mz Planer · سیستم طراحی نسخه ۲ · سند زنده — این فایل هم مرجع توکن است و هم نمونه تعاملی</footer>
+
+<script>
+/* ---------- theme / lang toggles ---------- */
+const btnLang=document.getElementById('btn-lang'),btnMode=document.getElementById('btn-mode'),btnFocus=document.getElementById('btn-focus');
+let lang='fa',mode='dark';
+btnLang.onclick=()=>{lang=lang==='fa'?'en':'fa';applyLang();};
+btnMode.onclick=()=>{mode=mode==='dark'?'light':'dark';document.documentElement.setAttribute('data-mode',mode);btnMode.textContent=mode==='dark'?'روشن':'تاریک';btnMode.classList.toggle('on',mode==='light');};
+btnFocus.onclick=()=>{document.getElementById('app').classList.toggle('focus-on');btnFocus.classList.toggle('on');};
+function applyLang(){
+  document.body.setAttribute('dir',lang==='fa'?'rtl':'ltr');
+  document.body.setAttribute('lang',lang);
+  document.querySelectorAll('[data-fa]').forEach(el=>{el.textContent=lang==='fa'?el.dataset.fa:el.dataset.en;});
+  document.querySelectorAll('[data-fa-title]').forEach(el=>{el.title=lang==='fa'?el.dataset.faTitle:el.dataset.enTitle;});
+  document.getElementById('qaInput').placeholder=lang==='fa'?'فردا ساعت ۶ جلسه با علی #کار مهم…':'Meeting with Ali tomorrow at 6pm #work high';
+  document.querySelector('.avatar').textContent=lang==='fa'?'م':'M';
+  renderCounts();
+}
+
+/* ---------- Persian digits ---------- */
+const FA='۰۱۲۳۴۵۶۷۸۹';
+function pd(n){return lang==='fa'?String(n).replace(/\d/g,d=>FA[+d]):String(n);}
+
+/* ---------- task / progress state ---------- */
+function allTasks(){return document.querySelectorAll('.task');}
+function renderCounts(){
+  const ts=[...allTasks()];
+  const total=ts.length,done=ts.filter(t=>t.classList.contains('done')).length;
+  const pct=total?Math.round(done/total*100):0;
+  document.getElementById('railDone').textContent=lang==='fa'?pd(done)+' از '+pd(total):done+' / '+total;
+  document.getElementById('railPct').textContent=pd(pct)+'٪';
+  const C=100.5;document.getElementById('railRing').setAttribute('stroke-dashoffset',C-C*pct/100);
+  // per-group counts
+  document.querySelectorAll('.grp').forEach(g=>{
+    const tt=[...g.querySelectorAll('.task')],dd=tt.filter(t=>t.classList.contains('done')).length;
+    const c=g.querySelector('.cnt');
+    if(c)c.textContent=lang==='fa'?pd(dd)+'/'+pd(tt.length):dd+'/'+tt.length;
+  });
+}
+let doneCount0=[...allTasks()].filter(t=>t.classList.contains('done')).length;
+function toggleTask(btn){
+  const row=btn.closest('.task');
+  row.classList.toggle('done');
+  renderCounts();
+  const ts=[...allTasks()],done=ts.filter(t=>t.classList.contains('done')).length;
+  if(done>doneCount0){showToast();}
+  doneCount0=done;
+}
+let toastT;
+function showToast(){
+  const t=document.getElementById('toast');
+  document.getElementById('toastTxt').textContent=lang==='fa'?'آفرین — ۱۲ روز پیوسته':'Nice — 12 day streak';
+  t.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),2400);
+}
+function toggleGrp(h){h.closest('.grp').classList.toggle('collapsed');}
+document.getElementById('nowPlay').onclick=()=>{
+  document.getElementById('app').classList.add('focus-on');btnFocus.classList.add('on');
+  showToast();
+};
+
+/* ---------- quick-add live parser (fa + en) ---------- */
+const qaInput=document.getElementById('qaInput'),qaChips=document.getElementById('qaChips'),qaParse=document.getElementById('qaParse');
+const FA_DIG={'۰':'0','۱':'1','۲':'2','۳':'3','۴':'4','۵':'5','۶':'6','۷':'7','۸':'8','۹':'9','٠':'0','١':'1','٢':'2','٣':'3','٤':'4','٥':'5','٦':'6','٧':'7','٨':'8','٩':'9'};
+const norm=s=>s.replace(/[۰-۹٠-٩]/g,d=>FA_DIG[d]??d);
+const FA_MONTHS=['فردا','پس‌فردا','امروز','شنبه','یکشنبه','دوشنبه','سه‌شنبه','چهارشنبه','پنجشنبه','جمعه'];
+const EN_DAYS=['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
+const EN_REL=['tomorrow','today','tonight','next week'];
+const FA_PR={'مهم':'high','فوری':'urgent','عادی':'normal','کم':'low'};
+const EN_PR=['high','urgent','normal','low','asap'];
+function parseQuick(text){
+  const t=norm(text),low=t.toLowerCase(),chips=[];
+  // date token
+  let dm=low.match(/\b(\d{1,2}):(\d{2})\b/);
+  if(dm){chips.push({t:(lang==='fa'?'ساعت ':'at ')+dm[1]+':'+dm[2],c:'iris'});}
+  else{let hm=low.match(/\b(\d{1,2})\s*(am|pm)\b/);if(hm)chips.push({t:(lang==='fa'?'ساعت ':'at ')+hm[1]+hm[2],c:'iris'});}
+  // relative day
+  const fday=FA_MONTHS.find(x=>t.includes(x));
+  const eday=EN_REL.find(x=>low.includes(x))||EN_DAYS.find(x=>low.includes(x));
+  if(fday)chips.push({t:fday,c:'iris'});else if(eday)chips.push({t:eday,c:'iris'});
+  // tags
+  const tags=[...new Set([...low.matchAll(/#([^\s#]+)/g)].map(m=>m[1]))];
+  tags.forEach(x=>chips.push({t:'#'+x,c:'violet'}));
+  // priority
+  const fp=Object.keys(FA_PR).find(x=>t.includes(x));
+  const ep=EN_PR.find(x=>new RegExp('\\b'+x+'\\b').test(low));
+  if(fp)chips.push({t:fp,c:'rose'});else if(ep)chips.push({t:ep,c:'rose'});
+  return chips;
+}
+qaInput.addEventListener('input',()=>{
+  const chips=parseQuick(qaInput.value);
+  qaChips.innerHTML=chips.map(c=>`<span class="qa-chip chip" style="border-color:var(--${c.c});color:var(--${c.c})"><span class="cd" style="background:var(--${c.c})"></span>${c.t}</span>`).join('');
+  qaParse.innerHTML=chips.length?`<span style="color:var(--mint);font-size:11.5px;font-weight:600">${pd(chips.length)} ${lang==='fa'?'توکن شناسایی شد':'token'+(chips.length>1?'s':'')+' parsed'}</span>`:'';
+});
+qaInput.addEventListener('keydown',e=>{
+  if(e.key==='Enter'&&qaInput.value.trim()){
+    const list=document.getElementById('list-afternoon');
+    const row=document.createElement('div');row.className='task';
+    row.innerHTML=`<button class="cbx" onclick="toggleTask(this)"><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg></button>
+      <div class="task-body"><span class="task-title">${qaInput.value.replace(/[<>]/g,'')}</span></div><span class="t-prio pr-normal"></span>`;
+    row.style.animation='chipIn .4s cubic-bezier(.34,1.56,.64,1)';
+    list.appendChild(row);qaInput.value='';qaChips.innerHTML='';qaParse.innerHTML='';renderCounts();
+  }
+});
+renderCounts();
+</script>
+</body>
+</html>
